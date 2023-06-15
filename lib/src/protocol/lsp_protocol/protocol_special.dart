@@ -130,12 +130,23 @@ class Either3<T1, T2, T3> implements ToJsonable {
       lspEquals(other._t3, _t3);
 
   T map<T>(T Function(T1) f1, T Function(T2) f2, T Function(T3) f3) {
-    return switch (_which) {
-      1 => f1(_t1 as T1),
-      2 => f2(_t2 as T2),
-      3 => f3(_t3 as T3),
-      _ => throw 'Invalid state.'
-    };
+    T result;
+    
+    switch (_which) {
+      case 1:
+        result = f1(_t1 as T1);
+        break;
+      case 2:
+        result = f2(_t2 as T2);
+        break;
+      case 3:
+        result = f3(_t3 as T3);
+        break;
+      default:
+        throw 'Invalid state.';
+    }
+    
+    return result;
   }
 
   @override
@@ -194,16 +205,29 @@ class Either4<T1, T2, T3, T4> implements ToJsonable {
       lspEquals(other._t3, _t3) &&
       lspEquals(other._t4, _t4);
 
-  T map<T>(T Function(T1) f1, T Function(T2) f2, T Function(T3) f3,
-      T Function(T4) f4) {
-    return switch (_which) {
-      1 => f1(_t1 as T1),
-      2 => f2(_t2 as T2),
-      3 => f3(_t3 as T3),
-      4 => f4(_t4 as T4),
-      _ => throw 'Invalid state.'
-    };
+  T map<T>(T Function(T1) f1, T Function(T2) f2, T Function(T3) f3, T Function(T4) f4) {
+    T result;
+    
+    switch (_which) {
+      case 1:
+        result = f1(_t1 as T1);
+        break;
+      case 2:
+        result = f2(_t2 as T2);
+        break;
+      case 3:
+        result = f3(_t3 as T3);
+        break;
+      case 4:
+        result = f4(_t4 as T4);
+        break;
+      default:
+        throw 'Invalid state.';
+    }
+    
+    return result;
   }
+
 
   @override
   Object? toJson() => map(specToJson, specToJson, specToJson, specToJson);
