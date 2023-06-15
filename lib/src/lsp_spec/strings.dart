@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:math';
 
 /// "$"
@@ -95,11 +97,11 @@ int findCommonPrefix(String a, String b) {
 
 /// Returns the number of characters common to the end of [a] and [b].
 int findCommonSuffix(String a, String b) {
-  var a_length = a.length;
-  var b_length = b.length;
-  var n = min(a_length, b_length);
+  var aLength = a.length;
+  var bLength = b.length;
+  var n = min(aLength, bLength);
   for (var i = 1; i <= n; i++) {
-    if (a.codeUnitAt(a_length - i) != b.codeUnitAt(b_length - i)) {
+    if (a.codeUnitAt(aLength - i) != b.codeUnitAt(bLength - i)) {
       return i - 1;
     }
   }

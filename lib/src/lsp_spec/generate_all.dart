@@ -97,6 +97,8 @@ String generatedFileHeader(int year, {bool importCustom = false}) => '''
 // To regenerate the file, use the script
 // "pkg/analysis_server/tool/lsp_spec/generate_all.dart".
 
+// ignore_for_file: constant_identifier_names
+
 import 'dart:core' hide deprecated;
 import 'dart:core' as core show deprecated;
 import 'dart:convert' show JsonEncoder;
