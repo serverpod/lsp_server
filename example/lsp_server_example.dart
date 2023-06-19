@@ -75,7 +75,7 @@ void main() async {
 // Each reported value will come with the indexed location in the file,
 // by line and column.
 List<Diagnostic> _validateTextDocument(String text, String sourcePath) {
-  RegExp pattern = RegExp('/\b[A-Z]{2,}\b/g');
+  RegExp pattern = RegExp(r'\b[A-Z]{2,}\b');
 
   final lines = text.split('\n');
 
