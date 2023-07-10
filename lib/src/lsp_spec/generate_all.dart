@@ -11,7 +11,7 @@ import 'package:path/path.dart' as path;
 import 'codegen_dart.dart';
 import 'meta_model.dart';
 
-Future<void> main(List<String> arguments) async {
+Future main(List<String> arguments) async {
   final args = argParser.parse(arguments);
   var help = args[argHelp] as bool;
   if (help) {
@@ -71,7 +71,7 @@ final Uri specLicenseUri = Uri.parse(
 final Uri specUri = Uri.parse(
     'https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/metaModel/metaModel.json');
 
-Future<void> downloadSpec() async {
+Future downloadSpec() async {
   final specResp = await http.get(specUri);
   final licenseResp = await http.get(specLicenseUri);
 
