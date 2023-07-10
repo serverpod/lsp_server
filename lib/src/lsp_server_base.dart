@@ -17,6 +17,8 @@ class Connection {
 
   Future listen() => peer.listen();
 
+  Future close() => peer.close();
+
   Future<R> sendRequest<R>(String method, dynamic params) async {
     return await peer.sendRequest(method, params);
   }
