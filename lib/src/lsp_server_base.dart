@@ -15,13 +15,13 @@ class Connection {
     peer = Peer(lspChannel(stream, sink));
   }
 
-  Future<void> listen() => peer.listen();
+  Future listen() => peer.listen();
 
   Future<R> sendRequest<R>(String method, dynamic params) async {
     return await peer.sendRequest(method, params);
   }
 
-  Future<void> onRequest<R>(
+  Future onRequest<R>(
     String method,
     Future<R> Function(Parameters) handler,
   ) async {
@@ -32,7 +32,7 @@ class Connection {
 
   void onNotification(
     String method,
-    Future<void> Function(Parameters) handler,
+    Future Function(Parameters) handler,
   ) {
     peer.registerMethod(method, (params) async {
       await handler(params);
@@ -51,27 +51,27 @@ class Connection {
     });
   }
 
-  void onInitialized(Future<void> Function(InitializedParams) handler) {
+  void onInitialized(Future Function(InitializedParams) handler) {
     peer.registerMethod('initialized', (params) async {
       var initParams = InitializedParams.fromJson(params.value);
       handler(initParams);
     });
   }
 
-  void onShutdown(Future<void> Function() handler) {
+  void onShutdown(Future Function() handler) {
     peer.registerMethod('shutdown', (params) async {
       await handler();
     });
   }
 
-  void onExit(Future<void> Function() handler) {
+  void onExit(Future Function() handler) {
     peer.registerMethod('exit', (params) async {
       await handler();
     });
   }
 
   void onDidOpenTextDocument(
-    Future<void> Function(DidOpenTextDocumentParams) handler,
+    Future Function(DidOpenTextDocumentParams) handler,
   ) {
     peer.registerMethod('textDocument/didOpen', (params) async {
       var openParams = DidOpenTextDocumentParams.fromJson(params.value);
@@ -80,7 +80,7 @@ class Connection {
   }
 
   void onDidChangeTextDocument(
-    Future<void> Function(DidChangeTextDocumentParams) handler,
+    Future Function(DidChangeTextDocumentParams) handler,
   ) {
     peer.registerMethod('textDocument/didChange', (params) async {
       var changeParams = DidChangeTextDocumentParams.fromJson(params.value);
@@ -89,7 +89,7 @@ class Connection {
   }
 
   void onDidCloseTextDocument(
-    Future<void> Function(DidCloseTextDocumentParams) handler,
+    Future Function(DidCloseTextDocumentParams) handler,
   ) {
     peer.registerMethod('textDocument/didClose', (params) async {
       var closeParams = DidCloseTextDocumentParams.fromJson(params.value);
@@ -98,7 +98,7 @@ class Connection {
   }
 
   void onWillSaveTextDocument(
-    Future<void> Function(WillSaveTextDocumentParams) handler,
+    Future Function(WillSaveTextDocumentParams) handler,
   ) {
     peer.registerMethod('textDocument/willSave', (params) async {
       var saveParams = WillSaveTextDocumentParams.fromJson(params.value);
@@ -116,7 +116,7 @@ class Connection {
   }
 
   void onDidSaveTextDocument(
-    Future<void> Function(DidSaveTextDocumentParams) handler,
+    Future Function(DidSaveTextDocumentParams) handler,
   ) {
     peer.registerMethod('textDocument/didSave', (params) async {
       var saveParams = DidSaveTextDocumentParams.fromJson(params.value);
@@ -127,7 +127,6 @@ class Connection {
   void sendDiagnostics(PublishDiagnosticsParams params) {
     peer.sendNotification('textDocument/publishDiagnostics', params.toJson());
   }
-
 
   void onHover(Future<Hover> Function(TextDocumentPositionParams) handler) {
     peer.registerMethod('textDocument/hover', (params) async {
@@ -164,27 +163,31 @@ class Connection {
   }
 
   void onDeclaration(
-    Future<Either3<Location, List<Location>, List<LocationLink>>?> Function(TextDocumentPositionParams) handler,
+    Future<Either3<Location, List<Location>, List<LocationLink>>?> Function(
+            TextDocumentPositionParams)
+        handler,
   ) {
     peer.registerMethod('textDocument/declaration', (params) async {
-      var declarationParams =
-          TextDocumentPositionParams.fromJson(params.value);
+      var declarationParams = TextDocumentPositionParams.fromJson(params.value);
       return await handler(declarationParams);
     });
   }
 
   void onDefinition(
-    Future<Either3<Location, List<Location>, List<LocationLink>>?> Function(TextDocumentPositionParams) handler,
+    Future<Either3<Location, List<Location>, List<LocationLink>>?> Function(
+            TextDocumentPositionParams)
+        handler,
   ) {
     peer.registerMethod('textDocument/definition', (params) async {
-      var definitionParams =
-          TextDocumentPositionParams.fromJson(params.value);
+      var definitionParams = TextDocumentPositionParams.fromJson(params.value);
       return await handler(definitionParams);
     });
   }
 
   void onTypeDefinition(
-    Future<Either3<Location, List<Location>, List<LocationLink>>?> Function(TextDocumentPositionParams) handler,
+    Future<Either3<Location, List<Location>, List<LocationLink>>?> Function(
+            TextDocumentPositionParams)
+        handler,
   ) {
     peer.registerMethod('textDocument/typeDefinition', (params) async {
       var typeDefinitionParams =
@@ -194,7 +197,9 @@ class Connection {
   }
 
   void onImplementation(
-    Future<Either3<Location, List<Location>, List<LocationLink>>?> Function(TextDocumentPositionParams) handler,
+    Future<Either3<Location, List<Location>, List<LocationLink>>?> Function(
+            TextDocumentPositionParams)
+        handler,
   ) {
     peer.registerMethod('textDocument/implementation', (params) async {
       var implementationParams =
@@ -213,11 +218,11 @@ class Connection {
   }
 
   void onDocumentHighlight(
-    Future<List<DocumentHighlight>> Function(TextDocumentPositionParams) handler,
+    Future<List<DocumentHighlight>> Function(TextDocumentPositionParams)
+        handler,
   ) {
     peer.registerMethod('textDocument/documentHighlight', (params) async {
-      var highlightParams =
-          TextDocumentPositionParams.fromJson(params.value);
+      var highlightParams = TextDocumentPositionParams.fromJson(params.value);
       return await handler(highlightParams);
     });
   }
@@ -313,7 +318,9 @@ class Connection {
   }
 
   void onPrepareRename(
-    Future<Either2<Range, PrepareRenameResult>> Function(TextDocumentPositionParams) handler,
+    Future<Either2<Range, PrepareRenameResult>> Function(
+            TextDocumentPositionParams)
+        handler,
   ) {
     peer.registerMethod('textDocument/prepareRename', (params) async {
       var prepareParams = TextDocumentPositionParams.fromJson(params.value);
@@ -384,5 +391,5 @@ class Connection {
     });
   }
 
-  Future<void> dispose() => peer.close();
+  Future dispose() => peer.close();
 }

@@ -45,7 +45,7 @@ class _Parser {
     });
   }
 
-  Future<void> close() => _subscription.cancel();
+  Future close() => _subscription.cancel();
 
   void _handleByte(int byte) {
     _buffer.add(byte);
