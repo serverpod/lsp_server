@@ -1,3 +1,7 @@
+## 0.3.0
+
+- Updates dependencies to later versions for compatibilty with newer Flutter and Serverpod versions.
+
 ## 0.2.1
 
 - Downgrades version of collection package for compatibility with Flutter.

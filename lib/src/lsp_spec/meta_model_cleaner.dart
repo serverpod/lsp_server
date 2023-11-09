@@ -33,13 +33,6 @@ class LspMetaModelCleaner {
 
   /// A pattern matching references in the LSP meta model comments that
   /// reference other types.
-  ///
-  ///   {@link TypeName description}
-  ///
-  /// Type names may have suffixes that shouldn't be included in the group such
-  /// as
-  ///
-  ///   {@link TypeName[] description}
   final _sourceCommentReferencesPattern =
       RegExp(r'{@link\s+([\w.]+)[\[\]]*(?:\s+[\w`. ]+[\[\]]*)?}');
 
