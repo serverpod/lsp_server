@@ -1,3 +1,7 @@
+## 0.3.1
+
+- More lax restraints on http version.
+
 ## 0.3.0
 
 - Updates dependencies to later versions for compatibilty with newer Flutter and Serverpod versions.
