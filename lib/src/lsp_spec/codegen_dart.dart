@@ -4,7 +4,6 @@
 
 import 'dart:collection';
 
-
 import 'package:collection/collection.dart';
 import 'package:dart_style/dart_style.dart';
 
@@ -701,7 +700,9 @@ void _writeFromJsonCode(
     }
     buffer
       ..write('Uri.parse(')
+      ..write('Uri.decodeFull(')
       ..write(requiresCast ? '$valueCode as String' : valueCode)
+      ..write(')')
       ..write(')');
     if (allowsNull) {
       buffer.write(': null');
