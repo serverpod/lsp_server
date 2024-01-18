@@ -1009,7 +1009,7 @@ class CallHierarchyItem implements ToJsonable {
         ?.map((item) => SymbolTag.fromJson(item as int))
         .toList();
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return CallHierarchyItem(
       data: data,
       detail: detail,
@@ -3047,7 +3047,7 @@ class CodeDescription implements ToJsonable {
   });
   static CodeDescription fromJson(Map<String, Object?> json) {
     final hrefJson = json['href'];
-    final href = Uri.parse(hrefJson as String);
+    final href = Uri.parse(Uri.decodeFull(hrefJson as String));
     return CodeDescription(
       href: href,
     );
@@ -6411,7 +6411,7 @@ class CreateFile implements ResourceOperation, ToJsonable {
         ? CreateFileOptions.fromJson(optionsJson as Map<String, Object?>)
         : null;
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return CreateFile(
       annotationId: annotationId,
       kind: kind,
@@ -7319,7 +7319,7 @@ class DeleteFile implements ResourceOperation, ToJsonable {
         ? DeleteFileOptions.fromJson(optionsJson as Map<String, Object?>)
         : null;
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return DeleteFile(
       annotationId: annotationId,
       kind: kind,
@@ -9737,7 +9737,7 @@ class DocumentDiagnosticReportPartialResult implements ToJsonable {
     final relatedDocumentsJson = json['relatedDocuments'];
     final relatedDocuments = (relatedDocumentsJson as Map<Object, Object?>).map(
         (key, value) => MapEntry(
-            Uri.parse(key as String),
+            Uri.parse(Uri.decodeFull(key as String)),
             _eitherFullDocumentDiagnosticReportUnchangedDocumentDiagnosticReport(
                 value)));
     return DocumentDiagnosticReportPartialResult(
@@ -10519,7 +10519,9 @@ class DocumentLink implements ToJsonable {
     final rangeJson = json['range'];
     final range = Range.fromJson(rangeJson as Map<String, Object?>);
     final targetJson = json['target'];
-    final target = targetJson != null ? Uri.parse(targetJson as String) : null;
+    final target = targetJson != null
+        ? Uri.parse(Uri.decodeFull(targetJson as String))
+        : null;
     final tooltipJson = json['tooltip'];
     final tooltip = tooltipJson as String?;
     return DocumentLink(
@@ -12925,7 +12927,7 @@ class FileEvent implements ToJsonable {
     final typeJson = json['type'];
     final type = FileChangeType.fromJson(typeJson as int);
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return FileEvent(
       type: type,
       uri: uri,
@@ -15649,8 +15651,9 @@ class InitializeParams implements WorkDoneProgressParams, ToJsonable {
     final rootPathJson = json['rootPath'];
     final rootPath = rootPathJson as String?;
     final rootUriJson = json['rootUri'];
-    final rootUri =
-        rootUriJson != null ? Uri.parse(rootUriJson as String) : null;
+    final rootUri = rootUriJson != null
+        ? Uri.parse(Uri.decodeFull(rootUriJson as String))
+        : null;
     final traceJson = json['trace'];
     final trace =
         traceJson != null ? TraceValues.fromJson(traceJson as String) : null;
@@ -18172,7 +18175,7 @@ class Location implements ToJsonable {
     final rangeJson = json['range'];
     final range = Range.fromJson(rangeJson as Map<String, Object?>);
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return Location(
       range: range,
       uri: uri,
@@ -18248,7 +18251,7 @@ class LocationLink implements ToJsonable {
     final targetSelectionRange =
         Range.fromJson(targetSelectionRangeJson as Map<String, Object?>);
     final targetUriJson = json['targetUri'];
-    final targetUri = Uri.parse(targetUriJson as String);
+    final targetUri = Uri.parse(Uri.decodeFull(targetUriJson as String));
     return LocationLink(
       originSelectionRange: originSelectionRange,
       targetRange: targetRange,
@@ -19567,7 +19570,7 @@ class NotebookCell implements ToJsonable {
   });
   static NotebookCell fromJson(Map<String, Object?> json) {
     final documentJson = json['document'];
-    final document = Uri.parse(documentJson as String);
+    final document = Uri.parse(Uri.decodeFull(documentJson as String));
     final executionSummaryJson = json['executionSummary'];
     final executionSummary = executionSummaryJson != null
         ? ExecutionSummary.fromJson(
@@ -19884,7 +19887,7 @@ class NotebookDocument implements ToJsonable {
     final notebookTypeJson = json['notebookType'];
     final notebookType = notebookTypeJson as String;
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     final versionJson = json['version'];
     final version = versionJson as int;
     return NotebookDocument(
@@ -20663,7 +20666,7 @@ class NotebookDocumentIdentifier implements ToJsonable {
   });
   static NotebookDocumentIdentifier fromJson(Map<String, Object?> json) {
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return NotebookDocumentIdentifier(
       uri: uri,
     );
@@ -21289,7 +21292,7 @@ class OptionalVersionedTextDocumentIdentifier
   static OptionalVersionedTextDocumentIdentifier fromJson(
       Map<String, Object?> json) {
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     final versionJson = json['version'];
     final version = versionJson as int?;
     return OptionalVersionedTextDocumentIdentifier(
@@ -21955,7 +21958,7 @@ class PreviousResultId implements ToJsonable {
   });
   static PreviousResultId fromJson(Map<String, Object?> json) {
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     final valueJson = json['value'];
     final value = valueJson as String;
     return PreviousResultId(
@@ -22285,7 +22288,7 @@ class PublishDiagnosticsParams implements ToJsonable {
         .map((item) => Diagnostic.fromJson(item as Map<String, Object?>))
         .toList();
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     final versionJson = json['version'];
     final version = versionJson as int?;
     return PublishDiagnosticsParams(
@@ -23048,7 +23051,7 @@ class RelatedFullDocumentDiagnosticReport
     final relatedDocumentsJson = json['relatedDocuments'];
     final relatedDocuments = (relatedDocumentsJson as Map<Object, Object?>?)
         ?.map((key, value) => MapEntry(
-            Uri.parse(key as String),
+            Uri.parse(Uri.decodeFull(key as String)),
             _eitherFullDocumentDiagnosticReportUnchangedDocumentDiagnosticReport(
                 value)));
     final resultIdJson = json['resultId'];
@@ -23182,7 +23185,7 @@ class RelatedUnchangedDocumentDiagnosticReport
     final relatedDocumentsJson = json['relatedDocuments'];
     final relatedDocuments = (relatedDocumentsJson as Map<Object, Object?>?)
         ?.map((key, value) => MapEntry(
-            Uri.parse(key as String),
+            Uri.parse(Uri.decodeFull(key as String)),
             _eitherFullDocumentDiagnosticReportUnchangedDocumentDiagnosticReport(
                 value)));
     final resultIdJson = json['resultId'];
@@ -23496,9 +23499,9 @@ class RenameFile implements ResourceOperation, ToJsonable {
     final kindJson = json['kind'];
     final kind = kindJson as String;
     final newUriJson = json['newUri'];
-    final newUri = Uri.parse(newUriJson as String);
+    final newUri = Uri.parse(Uri.decodeFull(newUriJson as String));
     final oldUriJson = json['oldUri'];
-    final oldUri = Uri.parse(oldUriJson as String);
+    final oldUri = Uri.parse(Uri.decodeFull(oldUriJson as String));
     final optionsJson = json['options'];
     final options = optionsJson != null
         ? RenameFileOptions.fromJson(optionsJson as Map<String, Object?>)
@@ -27168,7 +27171,7 @@ class ShowDocumentParams implements ToJsonable {
     final takeFocusJson = json['takeFocus'];
     final takeFocus = takeFocusJson as bool?;
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return ShowDocumentParams(
       external: external,
       selection: selection,
@@ -30115,7 +30118,7 @@ class TextDocumentIdentifier implements ToJsonable {
       return OptionalVersionedTextDocumentIdentifier.fromJson(json);
     }
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return TextDocumentIdentifier(
       uri: uri,
     );
@@ -30174,7 +30177,7 @@ class TextDocumentItem implements ToJsonable {
     final textJson = json['text'];
     final text = textJson as String;
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     final versionJson = json['version'];
     final version = versionJson as int;
     return TextDocumentItem(
@@ -31486,7 +31489,7 @@ class TypeHierarchyItem implements ToJsonable {
         ?.map((item) => SymbolTag.fromJson(item as int))
         .toList();
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return TypeHierarchyItem(
       data: data,
       detail: detail,
@@ -32324,7 +32327,7 @@ class VersionedNotebookDocumentIdentifier implements ToJsonable {
   static VersionedNotebookDocumentIdentifier fromJson(
       Map<String, Object?> json) {
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     final versionJson = json['version'];
     final version = versionJson as int;
     return VersionedNotebookDocumentIdentifier(
@@ -32394,7 +32397,7 @@ class VersionedTextDocumentIdentifier
   });
   static VersionedTextDocumentIdentifier fromJson(Map<String, Object?> json) {
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     final versionJson = json['version'];
     final version = versionJson as int;
     return VersionedTextDocumentIdentifier(
@@ -33995,7 +33998,7 @@ class WorkspaceEdit implements ToJsonable {
     final changesJson = json['changes'];
     final changes = (changesJson as Map<Object, Object?>?)?.map((key, value) =>
         MapEntry(
-            Uri.parse(key as String),
+            Uri.parse(Uri.decodeFull(key as String)),
             (value as List<Object?>)
                 .map((item) => TextEdit.fromJson(item as Map<String, Object?>))
                 .toList()));
@@ -34325,7 +34328,7 @@ class WorkspaceFolder implements ToJsonable {
     final nameJson = json['name'];
     final name = nameJson as String;
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return WorkspaceFolder(
       name: name,
       uri: uri,
@@ -34565,7 +34568,7 @@ class WorkspaceFullDocumentDiagnosticReport
     final resultIdJson = json['resultId'];
     final resultId = resultIdJson as String?;
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     final versionJson = json['version'];
     final version = versionJson as int?;
     return WorkspaceFullDocumentDiagnosticReport(
@@ -35116,7 +35119,7 @@ class WorkspaceSymbolLocation implements ToJsonable {
   });
   static WorkspaceSymbolLocation fromJson(Map<String, Object?> json) {
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return WorkspaceSymbolLocation(
       uri: uri,
     );
@@ -35432,7 +35435,7 @@ class WorkspaceUnchangedDocumentDiagnosticReport
     final resultIdJson = json['resultId'];
     final resultId = resultIdJson as String;
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     final versionJson = json['version'];
     final version = versionJson as int?;
     return WorkspaceUnchangedDocumentDiagnosticReport(
@@ -42985,7 +42988,7 @@ Either2<TextDocumentSyncKind, TextDocumentSyncOptions>
 
 Either2<LSPUri, WorkspaceFolder> _eitherUriWorkspaceFolder(Object? value) {
   return (value is String && Uri.tryParse(value) != null)
-      ? Either2.t1(Uri.parse(value))
+      ? Either2.t1(Uri.parse(Uri.decodeFull(value)))
       : WorkspaceFolder.canParse(value, nullLspJsonReporter)
           ? Either2.t2(WorkspaceFolder.fromJson(value as Map<String, Object?>))
           : throw '$value was not one of (LSPUri, WorkspaceFolder)';
