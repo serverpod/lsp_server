@@ -1,6 +1,6 @@
 name: lsp_server
 description: A Dart implementation of the Language Server Protocol.
-version: 0.3.1
+version: 0.3.2
 repository: https://github.com/serverpod/lsp_server
 
 environment:
