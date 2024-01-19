@@ -1,3 +1,7 @@
+## 0.3.3
+
+- Fixed pub dev score.
+
 ## 0.3.2
 
 - Always decode URI before parsing.
