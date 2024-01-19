@@ -1,3 +1,7 @@
+## 0.3.2
+
+- Always decode URI before parsing.
+ 
 ## 0.3.1
 
 - More lax restraints on http version.

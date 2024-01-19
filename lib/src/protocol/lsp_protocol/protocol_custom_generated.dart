@@ -1031,7 +1031,7 @@ class OpenUriParams implements ToJsonable {
   });
   static OpenUriParams fromJson(Map<String, Object?> json) {
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return OpenUriParams(
       uri: uri,
     );
@@ -1231,7 +1231,7 @@ class PublishClosingLabelsParams implements ToJsonable {
         .map((item) => ClosingLabel.fromJson(item as Map<String, Object?>))
         .toList();
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return PublishClosingLabelsParams(
       labels: labels,
       uri: uri,
@@ -1297,7 +1297,7 @@ class PublishFlutterOutlineParams implements ToJsonable {
     final outline =
         FlutterOutline.fromJson(outlineJson as Map<String, Object?>);
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return PublishFlutterOutlineParams(
       outline: outline,
       uri: uri,
@@ -1361,7 +1361,7 @@ class PublishOutlineParams implements ToJsonable {
     final outlineJson = json['outline'];
     final outline = Outline.fromJson(outlineJson as Map<String, Object?>);
     final uriJson = json['uri'];
-    final uri = Uri.parse(uriJson as String);
+    final uri = Uri.parse(Uri.decodeFull(uriJson as String));
     return PublishOutlineParams(
       outline: outline,
       uri: uri,
