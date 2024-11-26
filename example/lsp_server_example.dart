@@ -9,6 +9,8 @@ void main() async {
   // But you could use a socket connection or any other stream.
   var connection = Connection(stdin, stdout);
 
+  connection.console.log('Hello, World!');
+
   // Register a listener for when the client initialzes the server.
   // You are suppose to respond with the capabilities of the server.
   // Some capabilities must be enabled by the client, you can see what the client

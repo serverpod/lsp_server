@@ -2,17 +2,20 @@ import 'dart:async';
 
 import 'package:lsp_server/src/protocol/lsp_protocol/protocol_generated.dart';
 import 'package:lsp_server/src/protocol/lsp_protocol/protocol_special.dart';
+import 'package:lsp_server/src/remote_console.dart';
 import 'package:lsp_server/src/wireformat.dart';
 import 'package:json_rpc_2/json_rpc_2.dart';
 
 class Connection {
   late final Peer peer;
+  late final RemoteConsole console;
 
   Connection(
     Stream<List<int>> stream,
     StreamSink<List<int>> sink,
   ) {
     peer = Peer(lspChannel(stream, sink));
+    console = RemoteConsole(this);
   }
 
   Future listen() => peer.listen();
