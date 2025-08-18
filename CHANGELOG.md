@@ -1,3 +1,7 @@
+## 0.4.0
+
+- Upgrade dart_style and json_rpc_2 dependencies to latest stable. Min sdk constraint is now ^3.4.0
+
 ## 0.3.3
 
 - Fixed pub dev score.
@@ -5,7 +9,7 @@
 ## 0.3.2
 
 - Always decode URI before parsing.
- 
+
 ## 0.3.1
 
 - More lax restraints on http version.
