@@ -1,0 +1,78 @@
+name: LSP Server CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 0 * * 0" # every Sunday at 00:00 UTC
+  workflow_dispatch: # allow manual triggering
+
+env:
+  PUB_CACHE_PATH: ~/.pub-cache
+  LOWEST_DART_SDK: "3.4.0"
+
+jobs:
+  build:
+    name: Verify Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        dart_sdk:
+          # ${{ env.LOWEST_DART_SDK }} won't work at job level as env context not available for strategy ¯\_(ツ)_/¯
+          # (see https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs#context-availability)
+          - "3.4.0"
+          - stable
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.dart_sdk }}
+
+      - name: Cache Dart Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE_PATH }}
+          key: ${{ runner.os }}-pub-cache-${{ matrix.dart_sdk }}
+          restore-keys: ${{ runner.os }}-pub-cache-
+
+      - name: Verify Formatting
+        # Disable formatting check on stable for now.
+        # Dart stable (3.7.2 as of 2025-03-14) has radically different formatting
+        if: ${{ matrix.dart_sdk == env.LOWEST_DART_SDK }}
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Check Dependency Bounds
+        # Note:
+        # - --tighten only available from Dart 3.5.0,
+        # - stable would upgrade lints
+        if: ${{ matrix.dart_sdk == env.LOWEST_DART_SDK }}
+        run: >-
+          dart pub upgrade --major-versions &&
+          git diff-files --quiet
+
+      - name: Analyze (downgraded)
+        run: >-
+          dart pub downgrade &&
+          dart pub get &&
+          dart analyze ${{ matrix.dart_sdk == env.LOWEST_DART_SDK && '--fatal-infos' || '--fatal-warnings' }}
+
+      - name: Analyze (upgraded)
+        run: >-
+          dart pub upgrade &&
+          dart pub get &&
+          dart analyze ${{ matrix.dart_sdk == env.LOWEST_DART_SDK && '--fatal-infos' || '--fatal-warnings' }}
+
+      - name: Check Pana Score
+        if: ${{ matrix.dart_sdk == 'stable' }}
+        run: >-
+          dart pub global activate pana &&
+          dart pub global run pana --no-warning --exit-code-threshold=0 --json
+
+      - name: Publish Dry Run
+        run: dart pub publish --dry-run
