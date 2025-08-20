@@ -60,9 +60,9 @@ Object? specToJson(Object? obj) {
 
 ErrorOr<R> success<R>(R t) => ErrorOr<R>.success(t);
 
-Null _alwaysNull(_, [__]) => null;
+Null _alwaysNull(dynamic _, [__]) => null;
 
-bool _alwaysTrue(_, [__]) => true;
+bool _alwaysTrue(dynamic _, [__]) => true;
 
 class Either2<T1, T2> implements ToJsonable {
   final int _which;
@@ -97,7 +97,7 @@ class Either2<T1, T2> implements ToJsonable {
   String toString() => map((t) => t.toString(), (t) => t.toString());
 
   /// Checks whether the value of the union equals the supplied value.
-  bool valueEquals(o) => map((t) => t == o, (t) => t == o);
+  bool valueEquals(dynamic o) => map((t) => t == o, (t) => t == o);
 }
 
 class Either3<T1, T2, T3> implements ToJsonable {
@@ -162,7 +162,8 @@ class Either3<T1, T2, T3> implements ToJsonable {
       );
 
   /// Checks whether the value of the union equals the supplied value.
-  bool valueEquals(o) => map((t) => t == o, (t) => t == o, (t) => t == o);
+  bool valueEquals(dynamic o) =>
+      map((t) => t == o, (t) => t == o, (t) => t == o);
 }
 
 class Either4<T1, T2, T3, T4> implements ToJsonable {
@@ -243,7 +244,7 @@ class Either4<T1, T2, T3, T4> implements ToJsonable {
       );
 
   /// Checks whether the value of the union equals the supplied value.
-  bool valueEquals(o) =>
+  bool valueEquals(dynamic o) =>
       map((t) => t == o, (t) => t == o, (t) => t == o, (t) => t == o);
 }
 
