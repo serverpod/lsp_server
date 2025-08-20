@@ -6,6 +6,7 @@ import 'dart:collection';
 
 import 'package:collection/collection.dart';
 import 'package:dart_style/dart_style.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 import 'generate_all.dart';
 import 'meta_model.dart';
@@ -14,7 +15,7 @@ String capitalize(String string) {
   return string[0].toUpperCase() + string.substring(1);
 }
 
-final formatter = DartFormatter();
+final formatter = DartFormatter(languageVersion: Version(3, 6, 0));
 
 final _canParseFunctions = SplayTreeMap<String, String>();
 Map<String, Interface> _interfaces = {};
