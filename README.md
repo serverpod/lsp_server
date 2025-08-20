@@ -1,3 +1,6 @@
+[![Serverpod LSP Server banner](https://github.com/serverpod/lsp_server/raw/main/misc/images/banner.jpg)](https://serverpod.dev)
+
+
 # LSP Server
 
 This is a dart implementation of the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/) and comes with all serializable objects defined in the specification (v3.17).

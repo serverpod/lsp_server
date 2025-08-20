@@ -1,6 +1,9 @@
 ## 0.4.0
 
 - Upgrade dart_style and json_rpc_2 dependencies to latest stable. Min sdk constraint is now ^3.4.0
+- Add CI steps.
+- Re-generate protocol_generated.dart from latest 3.17 spec.
+- Add neat banner.
 
 ## 0.3.3
 
