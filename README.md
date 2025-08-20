@@ -46,6 +46,8 @@ void main() async {
       ),
     );
   });
+
+  await connection.listen();
 }
 ```
 

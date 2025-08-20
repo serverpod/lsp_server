@@ -69,6 +69,7 @@ void main() async {
     );
   });
 
+  // Start listening to peer
   await connection.listen();
 }
 

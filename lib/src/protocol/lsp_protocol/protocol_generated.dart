@@ -104,7 +104,7 @@ typedef LSPArray = List<LSPAny>;
 
 /// The glob pattern to watch relative to the base path. Glob patterns can have
 /// the following syntax:
-/// - `*` to match one or more characters in a path segment
+/// - `*` to match zero or more characters in a path segment
 /// - `?` to match on one character in a path segment
 /// - `**` to match any number of path segments, including none
 /// - `{}` to group conditions (e.g. `**​/*.{ts,js}` matches all TypeScript and
@@ -156,22 +156,24 @@ typedef TextDocumentContentChangeEvent
 
 /// Result for a request to resolve the type definition locations of a symbol at
 /// a given text document position. The request's parameter is of type
-/// [TextDocumentPositionParams] the response is of type [Declaration]
-/// or a typed array of [DeclarationLink] or a [Future] that resolves to such.
+/// [TextDocumentPositionParams]
+/// the response is of type [Declaration] or a typed array of [DeclarationLink]
+/// or a [Future] that resolves to such.
 typedef TextDocumentDeclarationResult
     = Either2<Declaration, List<DeclarationLink>>?;
 
 /// Result for a request to resolve the definition location of a symbol at a
 /// given text document position. The request's parameter is of type
-/// [TextDocumentPosition] the response is of either type [Definition]
-/// or a typed array of [DefinitionLink] or a [Future] that resolves to such.
+/// [TextDocumentPosition]
+/// the response is of either type [Definition] or a typed array of
+/// [DefinitionLink] or a [Future] that resolves to such.
 typedef TextDocumentDefinitionResult
     = Either2<Definition, List<DefinitionLink>>?;
 
 /// Result for request to resolve a [DocumentHighlight] for a given text
 /// document position. The request's parameter is of type [TextDocumentPosition]
-/// the request response is of type [DocumentHighlight] or a [Future] that
-/// resolves to such.
+/// the request response is an array of type [DocumentHighlight]
+/// or a [Future] that resolves to such.
 typedef TextDocumentDocumentHighlightResult = List<DocumentHighlight>?;
 
 /// Result for a request to provide document links
@@ -188,7 +190,7 @@ typedef TextDocumentDocumentSymbolResult
 /// glob-pattern that is applied to the [TextDocument.fileName].
 ///
 /// Glob patterns can have the following syntax:
-/// - `*` to match one or more characters in a path segment
+/// - `*` to match zero or more characters in a path segment
 /// - `?` to match on one character in a path segment
 /// - `**` to match any number of path segments, including none
 /// - `{}` to group sub patterns into an OR expression. (e.g. `**​/*.{ts,js}`
@@ -222,8 +224,8 @@ typedef TextDocumentHoverResult = Hover?;
 
 /// Result for a request to resolve the implementation locations of a symbol at
 /// a given text document position. The request's parameter is of type
-/// [TextDocumentPositionParams] the response is of type [Definition] or a
-/// [Future] that resolves to such.
+/// [TextDocumentPositionParams]
+/// the response is of type [Definition] or a [Future] that resolves to such.
 typedef TextDocumentImplementationResult
     = Either2<Definition, List<DefinitionLink>>?;
 
@@ -233,6 +235,16 @@ typedef TextDocumentImplementationResult
 ///
 /// @since 3.17.0
 typedef TextDocumentInlayHintResult = List<InlayHint>?;
+
+/// Result for a request to provide inline completions in a document. The
+/// request's parameter is of type [InlineCompletionParams], the response is of
+/// type
+/// [InlineCompletion] or a [Future] that resolves to such.
+///
+/// @since 3.18.0
+/// @proposed
+typedef TextDocumentInlineCompletionResult
+    = Either2<InlineCompletionList, List<InlineCompletionItem>>?;
 
 /// Result for a request to provide inline values in a document. The request's
 /// parameter is of type [InlineValueParams], the response is of type
@@ -276,6 +288,12 @@ typedef TextDocumentPrepareTypeHierarchyResult = List<TypeHierarchyItem>?;
 /// Result for a request to format a range in a document.
 typedef TextDocumentRangeFormattingResult = List<TextEdit>?;
 
+/// Result for a request to format ranges in a document.
+///
+/// @since 3.18.0
+/// @proposed
+typedef TextDocumentRangesFormattingResult = List<TextEdit>?;
+
 /// Result for a request to resolve project-wide references for the symbol
 /// denoted by the given text document position. The request's parameter is of
 /// type [ReferenceParams] the response is of type
@@ -303,8 +321,8 @@ typedef TextDocumentSignatureHelpResult = SignatureHelp?;
 
 /// Result for a request to resolve the type definition locations of a symbol at
 /// a given text document position. The request's parameter is of type
-/// [TextDocumentPositionParams] the response is of type [Definition] or a
-/// [Future] that resolves to such.
+/// [TextDocumentPositionParams]
+/// the response is of type [Definition] or a [Future] that resolves to such.
 typedef TextDocumentTypeDefinitionResult
     = Either2<Definition, List<DefinitionLink>>?;
 
@@ -5950,7 +5968,7 @@ class CompletionParams
     );
   }
 
-  /// The completion context. This is only available it the client specifies to
+  /// The completion context. This is only available if the client specifies to
   /// send this using the client capability
   /// `textDocument.completion.contextSupport === true`
   final CompletionContext? context;
@@ -6271,7 +6289,9 @@ class ConfigurationItem implements ToJsonable {
   });
   static ConfigurationItem fromJson(Map<String, Object?> json) {
     final scopeUriJson = json['scopeUri'];
-    final scopeUri = scopeUriJson as String?;
+    final scopeUri = scopeUriJson != null
+        ? Uri.parse(Uri.decodeFull(scopeUriJson as String))
+        : null;
     final sectionJson = json['section'];
     final section = sectionJson as String?;
     return ConfigurationItem(
@@ -6281,7 +6301,7 @@ class ConfigurationItem implements ToJsonable {
   }
 
   /// The scope to get the configuration section for.
-  final String? scopeUri;
+  final LSPUri? scopeUri;
 
   /// The configuration section asked for.
   final String? section;
@@ -6290,7 +6310,7 @@ class ConfigurationItem implements ToJsonable {
   Map<String, Object?> toJson() {
     var result = <String, Object?>{};
     if (scopeUri != null) {
-      result['scopeUri'] = scopeUri;
+      result['scopeUri'] = scopeUri?.toString();
     }
     if (section != null) {
       result['section'] = section;
@@ -6300,7 +6320,7 @@ class ConfigurationItem implements ToJsonable {
 
   static bool canParse(Object? obj, LspJsonReporter reporter) {
     if (obj is Map<String, Object?>) {
-      if (!_canParseString(obj, reporter, 'scopeUri',
+      if (!_canParseUri(obj, reporter, 'scopeUri',
           allowsUndefined: true, allowsNull: false)) {
         return false;
       }
@@ -11300,18 +11320,28 @@ class DocumentRangeFormattingClientCapabilities implements ToJsonable {
 
   DocumentRangeFormattingClientCapabilities({
     this.dynamicRegistration,
+    this.rangesSupport,
   });
   static DocumentRangeFormattingClientCapabilities fromJson(
       Map<String, Object?> json) {
     final dynamicRegistrationJson = json['dynamicRegistration'];
     final dynamicRegistration = dynamicRegistrationJson as bool?;
+    final rangesSupportJson = json['rangesSupport'];
+    final rangesSupport = rangesSupportJson as bool?;
     return DocumentRangeFormattingClientCapabilities(
       dynamicRegistration: dynamicRegistration,
+      rangesSupport: rangesSupport,
     );
   }
 
   /// Whether range formatting supports dynamic registration.
   final bool? dynamicRegistration;
+
+  /// Whether the client supports formatting multiple ranges at once.
+  ///
+  /// @since 3.18.0
+  /// @proposed
+  final bool? rangesSupport;
 
   @override
   Map<String, Object?> toJson() {
@@ -11319,12 +11349,19 @@ class DocumentRangeFormattingClientCapabilities implements ToJsonable {
     if (dynamicRegistration != null) {
       result['dynamicRegistration'] = dynamicRegistration;
     }
+    if (rangesSupport != null) {
+      result['rangesSupport'] = rangesSupport;
+    }
     return result;
   }
 
   static bool canParse(Object? obj, LspJsonReporter reporter) {
     if (obj is Map<String, Object?>) {
-      return _canParseBool(obj, reporter, 'dynamicRegistration',
+      if (!_canParseBool(obj, reporter, 'dynamicRegistration',
+          allowsUndefined: true, allowsNull: false)) {
+        return false;
+      }
+      return _canParseBool(obj, reporter, 'rangesSupport',
           allowsUndefined: true, allowsNull: false);
     } else {
       reporter.reportError(
@@ -11337,11 +11374,15 @@ class DocumentRangeFormattingClientCapabilities implements ToJsonable {
   bool operator ==(Object other) {
     return other is DocumentRangeFormattingClientCapabilities &&
         other.runtimeType == DocumentRangeFormattingClientCapabilities &&
-        dynamicRegistration == other.dynamicRegistration;
+        dynamicRegistration == other.dynamicRegistration &&
+        rangesSupport == other.rangesSupport;
   }
 
   @override
-  int get hashCode => dynamicRegistration.hashCode;
+  int get hashCode => Object.hash(
+        dynamicRegistration,
+        rangesSupport,
+      );
 
   @override
   String toString() => jsonEncoder.convert(toJson());
@@ -11356,6 +11397,7 @@ class DocumentRangeFormattingOptions
   );
 
   DocumentRangeFormattingOptions({
+    this.rangesSupport,
     this.workDoneProgress,
   });
   static DocumentRangeFormattingOptions fromJson(Map<String, Object?> json) {
@@ -11363,19 +11405,30 @@ class DocumentRangeFormattingOptions
         json, nullLspJsonReporter)) {
       return DocumentRangeFormattingRegistrationOptions.fromJson(json);
     }
+    final rangesSupportJson = json['rangesSupport'];
+    final rangesSupport = rangesSupportJson as bool?;
     final workDoneProgressJson = json['workDoneProgress'];
     final workDoneProgress = workDoneProgressJson as bool?;
     return DocumentRangeFormattingOptions(
+      rangesSupport: rangesSupport,
       workDoneProgress: workDoneProgress,
     );
   }
 
+  /// Whether the server supports formatting multiple ranges at once.
+  ///
+  /// @since 3.18.0
+  /// @proposed
+  final bool? rangesSupport;
   @override
   final bool? workDoneProgress;
 
   @override
   Map<String, Object?> toJson() {
     var result = <String, Object?>{};
+    if (rangesSupport != null) {
+      result['rangesSupport'] = rangesSupport;
+    }
     if (workDoneProgress != null) {
       result['workDoneProgress'] = workDoneProgress;
     }
@@ -11384,6 +11437,10 @@ class DocumentRangeFormattingOptions
 
   static bool canParse(Object? obj, LspJsonReporter reporter) {
     if (obj is Map<String, Object?>) {
+      if (!_canParseBool(obj, reporter, 'rangesSupport',
+          allowsUndefined: true, allowsNull: false)) {
+        return false;
+      }
       return _canParseBool(obj, reporter, 'workDoneProgress',
           allowsUndefined: true, allowsNull: false);
     } else {
@@ -11396,11 +11453,15 @@ class DocumentRangeFormattingOptions
   bool operator ==(Object other) {
     return other is DocumentRangeFormattingOptions &&
         other.runtimeType == DocumentRangeFormattingOptions &&
+        rangesSupport == other.rangesSupport &&
         workDoneProgress == other.workDoneProgress;
   }
 
   @override
-  int get hashCode => workDoneProgress.hashCode;
+  int get hashCode => Object.hash(
+        rangesSupport,
+        workDoneProgress,
+      );
 
   @override
   String toString() => jsonEncoder.convert(toJson());
@@ -11522,6 +11583,7 @@ class DocumentRangeFormattingRegistrationOptions
 
   DocumentRangeFormattingRegistrationOptions({
     this.documentSelector,
+    this.rangesSupport,
     this.workDoneProgress,
   });
   static DocumentRangeFormattingRegistrationOptions fromJson(
@@ -11531,10 +11593,13 @@ class DocumentRangeFormattingRegistrationOptions
         ?.map((item) =>
             TextDocumentFilterWithScheme.fromJson(item as Map<String, Object?>))
         .toList();
+    final rangesSupportJson = json['rangesSupport'];
+    final rangesSupport = rangesSupportJson as bool?;
     final workDoneProgressJson = json['workDoneProgress'];
     final workDoneProgress = workDoneProgressJson as bool?;
     return DocumentRangeFormattingRegistrationOptions(
       documentSelector: documentSelector,
+      rangesSupport: rangesSupport,
       workDoneProgress: workDoneProgress,
     );
   }
@@ -11543,6 +11608,13 @@ class DocumentRangeFormattingRegistrationOptions
   /// null the document selector provided on the client side will be used.
   @override
   final List<TextDocumentFilterWithScheme>? documentSelector;
+
+  /// Whether the server supports formatting multiple ranges at once.
+  ///
+  /// @since 3.18.0
+  /// @proposed
+  @override
+  final bool? rangesSupport;
   @override
   final bool? workDoneProgress;
 
@@ -11550,6 +11622,9 @@ class DocumentRangeFormattingRegistrationOptions
   Map<String, Object?> toJson() {
     var result = <String, Object?>{};
     result['documentSelector'] = documentSelector;
+    if (rangesSupport != null) {
+      result['rangesSupport'] = rangesSupport;
+    }
     if (workDoneProgress != null) {
       result['workDoneProgress'] = workDoneProgress;
     }
@@ -11561,6 +11636,10 @@ class DocumentRangeFormattingRegistrationOptions
       if (!_canParseListTextDocumentFilterWithScheme(
           obj, reporter, 'documentSelector',
           allowsUndefined: false, allowsNull: true)) {
+        return false;
+      }
+      if (!_canParseBool(obj, reporter, 'rangesSupport',
+          allowsUndefined: true, allowsNull: false)) {
         return false;
       }
       return _canParseBool(obj, reporter, 'workDoneProgress',
@@ -11581,13 +11660,123 @@ class DocumentRangeFormattingRegistrationOptions
             other.documentSelector,
             (TextDocumentFilterWithScheme a, TextDocumentFilterWithScheme b) =>
                 a == b) &&
+        rangesSupport == other.rangesSupport &&
         workDoneProgress == other.workDoneProgress;
   }
 
   @override
   int get hashCode => Object.hash(
         lspHashCode(documentSelector),
+        rangesSupport,
         workDoneProgress,
+      );
+
+  @override
+  String toString() => jsonEncoder.convert(toJson());
+}
+
+/// The parameters of a [DocumentRangesFormattingRequest].
+///
+/// @since 3.18.0
+/// @proposed
+class DocumentRangesFormattingParams
+    implements WorkDoneProgressParams, ToJsonable {
+  static const jsonHandler = LspJsonHandler(
+    DocumentRangesFormattingParams.canParse,
+    DocumentRangesFormattingParams.fromJson,
+  );
+
+  DocumentRangesFormattingParams({
+    required this.options,
+    required this.ranges,
+    required this.textDocument,
+    this.workDoneToken,
+  });
+  static DocumentRangesFormattingParams fromJson(Map<String, Object?> json) {
+    final optionsJson = json['options'];
+    final options =
+        FormattingOptions.fromJson(optionsJson as Map<String, Object?>);
+    final rangesJson = json['ranges'];
+    final ranges = (rangesJson as List<Object?>)
+        .map((item) => Range.fromJson(item as Map<String, Object?>))
+        .toList();
+    final textDocumentJson = json['textDocument'];
+    final textDocument = TextDocumentIdentifier.fromJson(
+        textDocumentJson as Map<String, Object?>);
+    final workDoneTokenJson = json['workDoneToken'];
+    final workDoneToken =
+        workDoneTokenJson == null ? null : _eitherIntString(workDoneTokenJson);
+    return DocumentRangesFormattingParams(
+      options: options,
+      ranges: ranges,
+      textDocument: textDocument,
+      workDoneToken: workDoneToken,
+    );
+  }
+
+  /// The format options
+  final FormattingOptions options;
+
+  /// The ranges to format
+  final List<Range> ranges;
+
+  /// The document to format.
+  final TextDocumentIdentifier textDocument;
+
+  /// An optional token that a server can use to report work done progress.
+  @override
+  final ProgressToken? workDoneToken;
+
+  @override
+  Map<String, Object?> toJson() {
+    var result = <String, Object?>{};
+    result['options'] = options.toJson();
+    result['ranges'] = ranges.map((item) => item.toJson()).toList();
+    result['textDocument'] = textDocument.toJson();
+    if (workDoneToken != null) {
+      result['workDoneToken'] = workDoneToken;
+    }
+    return result;
+  }
+
+  static bool canParse(Object? obj, LspJsonReporter reporter) {
+    if (obj is Map<String, Object?>) {
+      if (!_canParseFormattingOptions(obj, reporter, 'options',
+          allowsUndefined: false, allowsNull: false)) {
+        return false;
+      }
+      if (!_canParseListRange(obj, reporter, 'ranges',
+          allowsUndefined: false, allowsNull: false)) {
+        return false;
+      }
+      if (!_canParseTextDocumentIdentifier(obj, reporter, 'textDocument',
+          allowsUndefined: false, allowsNull: false)) {
+        return false;
+      }
+      return _canParseIntString(obj, reporter, 'workDoneToken',
+          allowsUndefined: true, allowsNull: false);
+    } else {
+      reporter.reportError('must be of type DocumentRangesFormattingParams');
+      return false;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DocumentRangesFormattingParams &&
+        other.runtimeType == DocumentRangesFormattingParams &&
+        options == other.options &&
+        listEqual(ranges, other.ranges, (Range a, Range b) => a == b) &&
+        textDocument == other.textDocument &&
+        workDoneToken == other.workDoneToken;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        options,
+        lspHashCode(ranges),
+        textDocument,
+        workDoneToken,
       );
 
   @override
@@ -12329,7 +12518,7 @@ class ErrorCodes implements ToJsonable {
   static const MethodNotFound = ErrorCodes(-32601);
   static const ParseError = ErrorCodes(-32700);
 
-  /// The client has canceled a request and a server as detected the cancel.
+  /// The client has canceled a request and a server has detected the cancel.
   static const RequestCancelled = ErrorCodes(-32800);
 
   /// A request failed but it was syntactically correct, e.g the method name was
@@ -13407,7 +13596,7 @@ class FileOperationPattern implements ToJsonable {
   }
 
   /// The glob pattern to match. Glob patterns can have the following syntax:
-  /// - `*` to match one or more characters in a path segment
+  /// - `*` to match zero or more characters in a path segment
   /// - `?` to match on one character in a path segment
   /// - `**` to match any number of path segments, including none
   /// - `{}` to group sub patterns into an OR expression. (e.g. `**​/*.{ts,js}`
@@ -14447,6 +14636,74 @@ class FoldingRangeRegistrationOptions
         id,
         workDoneProgress,
       );
+
+  @override
+  String toString() => jsonEncoder.convert(toJson());
+}
+
+/// Client workspace capabilities specific to folding ranges
+///
+/// @since 3.18.0
+/// @proposed
+class FoldingRangeWorkspaceClientCapabilities implements ToJsonable {
+  static const jsonHandler = LspJsonHandler(
+    FoldingRangeWorkspaceClientCapabilities.canParse,
+    FoldingRangeWorkspaceClientCapabilities.fromJson,
+  );
+
+  FoldingRangeWorkspaceClientCapabilities({
+    this.refreshSupport,
+  });
+  static FoldingRangeWorkspaceClientCapabilities fromJson(
+      Map<String, Object?> json) {
+    final refreshSupportJson = json['refreshSupport'];
+    final refreshSupport = refreshSupportJson as bool?;
+    return FoldingRangeWorkspaceClientCapabilities(
+      refreshSupport: refreshSupport,
+    );
+  }
+
+  /// Whether the client implementation supports a refresh request sent from the
+  /// server to the client.
+  ///
+  /// Note that this event is global and will force the client to refresh all
+  /// folding ranges currently shown. It should be used with absolute care and
+  /// is useful for situation where a server for example detects a project wide
+  /// change that requires such a calculation.
+  ///
+  /// @since 3.18.0
+  /// @proposed
+  final bool? refreshSupport;
+
+  @override
+  Map<String, Object?> toJson() {
+    var result = <String, Object?>{};
+    if (refreshSupport != null) {
+      result['refreshSupport'] = refreshSupport;
+    }
+    return result;
+  }
+
+  static bool canParse(Object? obj, LspJsonReporter reporter) {
+    if (obj is Map<String, Object?>) {
+      return _canParseBool(obj, reporter, 'refreshSupport',
+          allowsUndefined: true, allowsNull: false);
+    } else {
+      reporter.reportError(
+          'must be of type FoldingRangeWorkspaceClientCapabilities');
+      return false;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is FoldingRangeWorkspaceClientCapabilities &&
+        other.runtimeType == FoldingRangeWorkspaceClientCapabilities &&
+        refreshSupport == other.refreshSupport;
+  }
+
+  @override
+  int get hashCode => refreshSupport.hashCode;
 
   @override
   String toString() => jsonEncoder.convert(toJson());
@@ -16168,6 +16425,9 @@ class InlayHint implements ToJsonable {
   final bool? paddingRight;
 
   /// The position of this hint.
+  ///
+  /// If multiple hints have the same position, they will be shown in the order
+  /// they appear in the response.
   final Position position;
 
   /// Optional text edits that are performed when accepting this inlay hint.
@@ -16909,6 +17169,626 @@ class InlayHintWorkspaceClientCapabilities implements ToJsonable {
 
   @override
   String toString() => jsonEncoder.convert(toJson());
+}
+
+/// Client capabilities specific to inline completions.
+///
+/// @since 3.18.0
+/// @proposed
+class InlineCompletionClientCapabilities implements ToJsonable {
+  static const jsonHandler = LspJsonHandler(
+    InlineCompletionClientCapabilities.canParse,
+    InlineCompletionClientCapabilities.fromJson,
+  );
+
+  InlineCompletionClientCapabilities({
+    this.dynamicRegistration,
+  });
+  static InlineCompletionClientCapabilities fromJson(
+      Map<String, Object?> json) {
+    final dynamicRegistrationJson = json['dynamicRegistration'];
+    final dynamicRegistration = dynamicRegistrationJson as bool?;
+    return InlineCompletionClientCapabilities(
+      dynamicRegistration: dynamicRegistration,
+    );
+  }
+
+  /// Whether implementation supports dynamic registration for inline completion
+  /// providers.
+  final bool? dynamicRegistration;
+
+  @override
+  Map<String, Object?> toJson() {
+    var result = <String, Object?>{};
+    if (dynamicRegistration != null) {
+      result['dynamicRegistration'] = dynamicRegistration;
+    }
+    return result;
+  }
+
+  static bool canParse(Object? obj, LspJsonReporter reporter) {
+    if (obj is Map<String, Object?>) {
+      return _canParseBool(obj, reporter, 'dynamicRegistration',
+          allowsUndefined: true, allowsNull: false);
+    } else {
+      reporter
+          .reportError('must be of type InlineCompletionClientCapabilities');
+      return false;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is InlineCompletionClientCapabilities &&
+        other.runtimeType == InlineCompletionClientCapabilities &&
+        dynamicRegistration == other.dynamicRegistration;
+  }
+
+  @override
+  int get hashCode => dynamicRegistration.hashCode;
+
+  @override
+  String toString() => jsonEncoder.convert(toJson());
+}
+
+/// Provides information about the context in which an inline completion was
+/// requested.
+///
+/// @since 3.18.0
+/// @proposed
+class InlineCompletionContext implements ToJsonable {
+  static const jsonHandler = LspJsonHandler(
+    InlineCompletionContext.canParse,
+    InlineCompletionContext.fromJson,
+  );
+
+  InlineCompletionContext({
+    this.selectedCompletionInfo,
+    required this.triggerKind,
+  });
+  static InlineCompletionContext fromJson(Map<String, Object?> json) {
+    final selectedCompletionInfoJson = json['selectedCompletionInfo'];
+    final selectedCompletionInfo = selectedCompletionInfoJson != null
+        ? SelectedCompletionInfo.fromJson(
+            selectedCompletionInfoJson as Map<String, Object?>)
+        : null;
+    final triggerKindJson = json['triggerKind'];
+    final triggerKind =
+        InlineCompletionTriggerKind.fromJson(triggerKindJson as int);
+    return InlineCompletionContext(
+      selectedCompletionInfo: selectedCompletionInfo,
+      triggerKind: triggerKind,
+    );
+  }
+
+  /// Provides information about the currently selected item in the autocomplete
+  /// widget if it is visible.
+  final SelectedCompletionInfo? selectedCompletionInfo;
+
+  /// Describes how the inline completion was triggered.
+  final InlineCompletionTriggerKind triggerKind;
+
+  @override
+  Map<String, Object?> toJson() {
+    var result = <String, Object?>{};
+    if (selectedCompletionInfo != null) {
+      result['selectedCompletionInfo'] = selectedCompletionInfo?.toJson();
+    }
+    result['triggerKind'] = triggerKind.toJson();
+    return result;
+  }
+
+  static bool canParse(Object? obj, LspJsonReporter reporter) {
+    if (obj is Map<String, Object?>) {
+      if (!_canParseSelectedCompletionInfo(
+          obj, reporter, 'selectedCompletionInfo',
+          allowsUndefined: true, allowsNull: false)) {
+        return false;
+      }
+      return _canParseInlineCompletionTriggerKind(obj, reporter, 'triggerKind',
+          allowsUndefined: false, allowsNull: false);
+    } else {
+      reporter.reportError('must be of type InlineCompletionContext');
+      return false;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is InlineCompletionContext &&
+        other.runtimeType == InlineCompletionContext &&
+        selectedCompletionInfo == other.selectedCompletionInfo &&
+        triggerKind == other.triggerKind;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        selectedCompletionInfo,
+        triggerKind,
+      );
+
+  @override
+  String toString() => jsonEncoder.convert(toJson());
+}
+
+/// An inline completion item represents a text snippet that is proposed inline
+/// to complete text that is being typed.
+///
+/// @since 3.18.0
+/// @proposed
+class InlineCompletionItem implements ToJsonable {
+  static const jsonHandler = LspJsonHandler(
+    InlineCompletionItem.canParse,
+    InlineCompletionItem.fromJson,
+  );
+
+  InlineCompletionItem({
+    this.command,
+    this.filterText,
+    required this.insertText,
+    this.range,
+  });
+  static InlineCompletionItem fromJson(Map<String, Object?> json) {
+    final commandJson = json['command'];
+    final command = commandJson != null
+        ? Command.fromJson(commandJson as Map<String, Object?>)
+        : null;
+    final filterTextJson = json['filterText'];
+    final filterText = filterTextJson as String?;
+    final insertTextJson = json['insertText'];
+    final insertText = _eitherStringStringValue(insertTextJson);
+    final rangeJson = json['range'];
+    final range = rangeJson != null
+        ? Range.fromJson(rangeJson as Map<String, Object?>)
+        : null;
+    return InlineCompletionItem(
+      command: command,
+      filterText: filterText,
+      insertText: insertText,
+      range: range,
+    );
+  }
+
+  /// An optional [Command] that is executed *after* inserting this completion.
+  final Command? command;
+
+  /// A text that is used to decide if this inline completion should be shown.
+  /// When `falsy` the [InlineCompletionItem.insertText] is used.
+  final String? filterText;
+
+  /// The text to replace the range with. Must be set.
+  final Either2<String, StringValue> insertText;
+
+  /// The range to replace. Must begin and end on the same line.
+  final Range? range;
+
+  @override
+  Map<String, Object?> toJson() {
+    var result = <String, Object?>{};
+    if (command != null) {
+      result['command'] = command?.toJson();
+    }
+    if (filterText != null) {
+      result['filterText'] = filterText;
+    }
+    result['insertText'] = insertText;
+    if (range != null) {
+      result['range'] = range?.toJson();
+    }
+    return result;
+  }
+
+  static bool canParse(Object? obj, LspJsonReporter reporter) {
+    if (obj is Map<String, Object?>) {
+      if (!_canParseCommand(obj, reporter, 'command',
+          allowsUndefined: true, allowsNull: false)) {
+        return false;
+      }
+      if (!_canParseString(obj, reporter, 'filterText',
+          allowsUndefined: true, allowsNull: false)) {
+        return false;
+      }
+      if (!_canParseStringStringValue(obj, reporter, 'insertText',
+          allowsUndefined: false, allowsNull: false)) {
+        return false;
+      }
+      return _canParseRange(obj, reporter, 'range',
+          allowsUndefined: true, allowsNull: false);
+    } else {
+      reporter.reportError('must be of type InlineCompletionItem');
+      return false;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is InlineCompletionItem &&
+        other.runtimeType == InlineCompletionItem &&
+        command == other.command &&
+        filterText == other.filterText &&
+        insertText == other.insertText &&
+        range == other.range;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        command,
+        filterText,
+        insertText,
+        range,
+      );
+
+  @override
+  String toString() => jsonEncoder.convert(toJson());
+}
+
+/// Represents a collection of [InlineCompletionItem] to be presented in the
+/// editor.
+///
+/// @since 3.18.0
+/// @proposed
+class InlineCompletionList implements ToJsonable {
+  static const jsonHandler = LspJsonHandler(
+    InlineCompletionList.canParse,
+    InlineCompletionList.fromJson,
+  );
+
+  InlineCompletionList({
+    required this.items,
+  });
+  static InlineCompletionList fromJson(Map<String, Object?> json) {
+    final itemsJson = json['items'];
+    final items = (itemsJson as List<Object?>)
+        .map((item) =>
+            InlineCompletionItem.fromJson(item as Map<String, Object?>))
+        .toList();
+    return InlineCompletionList(
+      items: items,
+    );
+  }
+
+  /// The inline completion items
+  final List<InlineCompletionItem> items;
+
+  @override
+  Map<String, Object?> toJson() {
+    var result = <String, Object?>{};
+    result['items'] = items.map((item) => item.toJson()).toList();
+    return result;
+  }
+
+  static bool canParse(Object? obj, LspJsonReporter reporter) {
+    if (obj is Map<String, Object?>) {
+      return _canParseListInlineCompletionItem(obj, reporter, 'items',
+          allowsUndefined: false, allowsNull: false);
+    } else {
+      reporter.reportError('must be of type InlineCompletionList');
+      return false;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is InlineCompletionList &&
+        other.runtimeType == InlineCompletionList &&
+        listEqual(items, other.items,
+            (InlineCompletionItem a, InlineCompletionItem b) => a == b);
+  }
+
+  @override
+  int get hashCode => lspHashCode(items);
+
+  @override
+  String toString() => jsonEncoder.convert(toJson());
+}
+
+/// Inline completion options used during static registration.
+///
+/// @since 3.18.0
+/// @proposed
+class InlineCompletionOptions implements WorkDoneProgressOptions, ToJsonable {
+  static const jsonHandler = LspJsonHandler(
+    InlineCompletionOptions.canParse,
+    InlineCompletionOptions.fromJson,
+  );
+
+  InlineCompletionOptions({
+    this.workDoneProgress,
+  });
+  static InlineCompletionOptions fromJson(Map<String, Object?> json) {
+    if (InlineCompletionRegistrationOptions.canParse(
+        json, nullLspJsonReporter)) {
+      return InlineCompletionRegistrationOptions.fromJson(json);
+    }
+    final workDoneProgressJson = json['workDoneProgress'];
+    final workDoneProgress = workDoneProgressJson as bool?;
+    return InlineCompletionOptions(
+      workDoneProgress: workDoneProgress,
+    );
+  }
+
+  @override
+  final bool? workDoneProgress;
+
+  @override
+  Map<String, Object?> toJson() {
+    var result = <String, Object?>{};
+    if (workDoneProgress != null) {
+      result['workDoneProgress'] = workDoneProgress;
+    }
+    return result;
+  }
+
+  static bool canParse(Object? obj, LspJsonReporter reporter) {
+    if (obj is Map<String, Object?>) {
+      return _canParseBool(obj, reporter, 'workDoneProgress',
+          allowsUndefined: true, allowsNull: false);
+    } else {
+      reporter.reportError('must be of type InlineCompletionOptions');
+      return false;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is InlineCompletionOptions &&
+        other.runtimeType == InlineCompletionOptions &&
+        workDoneProgress == other.workDoneProgress;
+  }
+
+  @override
+  int get hashCode => workDoneProgress.hashCode;
+
+  @override
+  String toString() => jsonEncoder.convert(toJson());
+}
+
+/// A parameter literal used in inline completion requests.
+///
+/// @since 3.18.0
+/// @proposed
+class InlineCompletionParams
+    implements TextDocumentPositionParams, WorkDoneProgressParams, ToJsonable {
+  static const jsonHandler = LspJsonHandler(
+    InlineCompletionParams.canParse,
+    InlineCompletionParams.fromJson,
+  );
+
+  InlineCompletionParams({
+    required this.context,
+    required this.position,
+    required this.textDocument,
+    this.workDoneToken,
+  });
+  static InlineCompletionParams fromJson(Map<String, Object?> json) {
+    final contextJson = json['context'];
+    final context =
+        InlineCompletionContext.fromJson(contextJson as Map<String, Object?>);
+    final positionJson = json['position'];
+    final position = Position.fromJson(positionJson as Map<String, Object?>);
+    final textDocumentJson = json['textDocument'];
+    final textDocument = TextDocumentIdentifier.fromJson(
+        textDocumentJson as Map<String, Object?>);
+    final workDoneTokenJson = json['workDoneToken'];
+    final workDoneToken =
+        workDoneTokenJson == null ? null : _eitherIntString(workDoneTokenJson);
+    return InlineCompletionParams(
+      context: context,
+      position: position,
+      textDocument: textDocument,
+      workDoneToken: workDoneToken,
+    );
+  }
+
+  /// Additional information about the context in which inline completions were
+  /// requested.
+  final InlineCompletionContext context;
+
+  /// The position inside the text document.
+  @override
+  final Position position;
+
+  /// The text document.
+  @override
+  final TextDocumentIdentifier textDocument;
+
+  /// An optional token that a server can use to report work done progress.
+  @override
+  final ProgressToken? workDoneToken;
+
+  @override
+  Map<String, Object?> toJson() {
+    var result = <String, Object?>{};
+    result['context'] = context.toJson();
+    result['position'] = position.toJson();
+    result['textDocument'] = textDocument.toJson();
+    if (workDoneToken != null) {
+      result['workDoneToken'] = workDoneToken;
+    }
+    return result;
+  }
+
+  static bool canParse(Object? obj, LspJsonReporter reporter) {
+    if (obj is Map<String, Object?>) {
+      if (!_canParseInlineCompletionContext(obj, reporter, 'context',
+          allowsUndefined: false, allowsNull: false)) {
+        return false;
+      }
+      if (!_canParsePosition(obj, reporter, 'position',
+          allowsUndefined: false, allowsNull: false)) {
+        return false;
+      }
+      if (!_canParseTextDocumentIdentifier(obj, reporter, 'textDocument',
+          allowsUndefined: false, allowsNull: false)) {
+        return false;
+      }
+      return _canParseIntString(obj, reporter, 'workDoneToken',
+          allowsUndefined: true, allowsNull: false);
+    } else {
+      reporter.reportError('must be of type InlineCompletionParams');
+      return false;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is InlineCompletionParams &&
+        other.runtimeType == InlineCompletionParams &&
+        context == other.context &&
+        position == other.position &&
+        textDocument == other.textDocument &&
+        workDoneToken == other.workDoneToken;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        context,
+        position,
+        textDocument,
+        workDoneToken,
+      );
+
+  @override
+  String toString() => jsonEncoder.convert(toJson());
+}
+
+/// Inline completion options used during static or dynamic registration.
+///
+/// @since 3.18.0
+/// @proposed
+class InlineCompletionRegistrationOptions
+    implements
+        InlineCompletionOptions,
+        StaticRegistrationOptions,
+        TextDocumentRegistrationOptions,
+        ToJsonable {
+  static const jsonHandler = LspJsonHandler(
+    InlineCompletionRegistrationOptions.canParse,
+    InlineCompletionRegistrationOptions.fromJson,
+  );
+
+  InlineCompletionRegistrationOptions({
+    this.documentSelector,
+    this.id,
+    this.workDoneProgress,
+  });
+  static InlineCompletionRegistrationOptions fromJson(
+      Map<String, Object?> json) {
+    final documentSelectorJson = json['documentSelector'];
+    final documentSelector = (documentSelectorJson as List<Object?>?)
+        ?.map((item) =>
+            TextDocumentFilterWithScheme.fromJson(item as Map<String, Object?>))
+        .toList();
+    final idJson = json['id'];
+    final id = idJson as String?;
+    final workDoneProgressJson = json['workDoneProgress'];
+    final workDoneProgress = workDoneProgressJson as bool?;
+    return InlineCompletionRegistrationOptions(
+      documentSelector: documentSelector,
+      id: id,
+      workDoneProgress: workDoneProgress,
+    );
+  }
+
+  /// A document selector to identify the scope of the registration. If set to
+  /// null the document selector provided on the client side will be used.
+  @override
+  final List<TextDocumentFilterWithScheme>? documentSelector;
+
+  /// The id used to register the request. The id can be used to deregister the
+  /// request again. See also Registration#id.
+  @override
+  final String? id;
+  @override
+  final bool? workDoneProgress;
+
+  @override
+  Map<String, Object?> toJson() {
+    var result = <String, Object?>{};
+    result['documentSelector'] = documentSelector;
+    if (id != null) {
+      result['id'] = id;
+    }
+    if (workDoneProgress != null) {
+      result['workDoneProgress'] = workDoneProgress;
+    }
+    return result;
+  }
+
+  static bool canParse(Object? obj, LspJsonReporter reporter) {
+    if (obj is Map<String, Object?>) {
+      if (!_canParseListTextDocumentFilterWithScheme(
+          obj, reporter, 'documentSelector',
+          allowsUndefined: false, allowsNull: true)) {
+        return false;
+      }
+      if (!_canParseString(obj, reporter, 'id',
+          allowsUndefined: true, allowsNull: false)) {
+        return false;
+      }
+      return _canParseBool(obj, reporter, 'workDoneProgress',
+          allowsUndefined: true, allowsNull: false);
+    } else {
+      reporter
+          .reportError('must be of type InlineCompletionRegistrationOptions');
+      return false;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is InlineCompletionRegistrationOptions &&
+        other.runtimeType == InlineCompletionRegistrationOptions &&
+        listEqual(
+            documentSelector,
+            other.documentSelector,
+            (TextDocumentFilterWithScheme a, TextDocumentFilterWithScheme b) =>
+                a == b) &&
+        id == other.id &&
+        workDoneProgress == other.workDoneProgress;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        lspHashCode(documentSelector),
+        id,
+        workDoneProgress,
+      );
+
+  @override
+  String toString() => jsonEncoder.convert(toJson());
+}
+
+/// Describes how an [InlineCompletionItemProvider] was triggered.
+///
+/// @since 3.18.0
+/// @proposed
+class InlineCompletionTriggerKind implements ToJsonable {
+  const InlineCompletionTriggerKind(this._value);
+  const InlineCompletionTriggerKind.fromJson(this._value);
+
+  final int _value;
+
+  static bool canParse(Object? obj, LspJsonReporter reporter) => obj is int;
+
+  /// Completion was triggered automatically while editing.
+  static const Automatic = InlineCompletionTriggerKind(1);
+
+  /// Completion was triggered explicitly by a user gesture.
+  static const Invoked = InlineCompletionTriggerKind(0);
+
+  @override
+  Object toJson() => _value;
+
+  @override
+  String toString() => _value.toString();
+
+  @override
+  int get hashCode => _value.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      other is InlineCompletionTriggerKind && other._value == _value;
 }
 
 /// Client capabilities specific to inline values.
@@ -18754,6 +19634,11 @@ class MessageType implements ToJsonable {
 
   static bool canParse(Object? obj, LspJsonReporter reporter) => obj is int;
 
+  /// A debug message.
+  ///
+  /// @since 3.18.0
+  static const Debug = MessageType(5);
+
   /// An error message.
   static const Error = MessageType(1);
 
@@ -18924,6 +19809,10 @@ class Method implements ToJsonable {
   /// Constant for the 'textDocument/inlayHint' method.
   static const textDocument_inlayHint = Method('textDocument/inlayHint');
 
+  /// Constant for the 'textDocument/inlineCompletion' method.
+  static const textDocument_inlineCompletion =
+      Method('textDocument/inlineCompletion');
+
   /// Constant for the 'textDocument/inlineValue' method.
   static const textDocument_inlineValue = Method('textDocument/inlineValue');
 
@@ -18957,6 +19846,10 @@ class Method implements ToJsonable {
   /// Constant for the 'textDocument/rangeFormatting' method.
   static const textDocument_rangeFormatting =
       Method('textDocument/rangeFormatting');
+
+  /// Constant for the 'textDocument/rangesFormatting' method.
+  static const textDocument_rangesFormatting =
+      Method('textDocument/rangesFormatting');
 
   /// Constant for the 'textDocument/references' method.
   static const textDocument_references = Method('textDocument/references');
@@ -19061,6 +19954,10 @@ class Method implements ToJsonable {
 
   /// Constant for the 'workspace/executeCommand' method.
   static const workspace_executeCommand = Method('workspace/executeCommand');
+
+  /// Constant for the 'workspace/foldingRange/refresh' method.
+  static const workspace_foldingRange_refresh =
+      Method('workspace/foldingRange/refresh');
 
   /// Constant for the 'workspace/inlayHint/refresh' method.
   static const workspace_inlayHint_refresh =
@@ -21642,20 +22539,8 @@ class PlaceholderAndRange implements ToJsonable {
 /// offset of b is 3 since `𐐀` is represented using two code units in UTF-16.
 /// Since 3.17 clients and servers can agree on a different string encoding
 /// representation (e.g. UTF-8). The client announces it's supported encoding
-/// via the client capability [general.positionEncodings]. The value is an array
-/// of position encodings the client supports, with decreasing preference (e.g.
-/// the encoding at index `0` is the most preferred one). To stay backwards
-/// compatible the only mandatory encoding is UTF-16 represented via the string
-/// `utf-16`. The server can pick one of the encodings offered by the client and
-/// signals that encoding back to the client via the initialize result's
-/// property [capabilities.positionEncoding]. If the string value `utf-16` is
-/// missing from the client's capability `general.positionEncodings` servers can
-/// safely assume that the client supports UTF-16. If the server omits the
-/// position encoding in its initialize result the encoding defaults to the
-/// string value `utf-16`. Implementation considerations: since the conversion
-/// from one encoding into another requires the content of the file / line the
-/// conversion is best done where the file is read which is usually on the
-/// server side.
+/// via the client capability
+/// [`general.positionEncodings`](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#clientCapabilities). The value is an array of position encodings the client supports, with decreasing preference (e.g. the encoding at index `0` is the most preferred one). To stay backwards compatible the only mandatory encoding is UTF-16 represented via the string `utf-16`. The server can pick one of the encodings offered by the client and signals that encoding back to the client via the initialize result's property [`capabilities.positionEncoding`](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#serverCapabilities). If the string value `utf-16` is missing from the client's capability `general.positionEncodings` servers can safely assume that the client supports UTF-16. If the server omits the position encoding in its initialize result the encoding defaults to the string value `utf-16`. Implementation considerations: since the conversion from one encoding into another requires the content of the file / line the conversion is best done where the file is read which is usually on the server side.
 ///
 /// Positions are line end character agnostic. So you can not specify a position
 /// that denotes `\r|\n` or `\n|` where `|` represents the character offset.
@@ -24184,6 +25069,77 @@ class SaveOptions implements ToJsonable {
   String toString() => jsonEncoder.convert(toJson());
 }
 
+/// Describes the currently selected completion item.
+///
+/// @since 3.18.0
+/// @proposed
+class SelectedCompletionInfo implements ToJsonable {
+  static const jsonHandler = LspJsonHandler(
+    SelectedCompletionInfo.canParse,
+    SelectedCompletionInfo.fromJson,
+  );
+
+  SelectedCompletionInfo({
+    required this.range,
+    required this.text,
+  });
+  static SelectedCompletionInfo fromJson(Map<String, Object?> json) {
+    final rangeJson = json['range'];
+    final range = Range.fromJson(rangeJson as Map<String, Object?>);
+    final textJson = json['text'];
+    final text = textJson as String;
+    return SelectedCompletionInfo(
+      range: range,
+      text: text,
+    );
+  }
+
+  /// The range that will be replaced if this completion item is accepted.
+  final Range range;
+
+  /// The text the range will be replaced with if this completion is accepted.
+  final String text;
+
+  @override
+  Map<String, Object?> toJson() {
+    var result = <String, Object?>{};
+    result['range'] = range.toJson();
+    result['text'] = text;
+    return result;
+  }
+
+  static bool canParse(Object? obj, LspJsonReporter reporter) {
+    if (obj is Map<String, Object?>) {
+      if (!_canParseRange(obj, reporter, 'range',
+          allowsUndefined: false, allowsNull: false)) {
+        return false;
+      }
+      return _canParseString(obj, reporter, 'text',
+          allowsUndefined: false, allowsNull: false);
+    } else {
+      reporter.reportError('must be of type SelectedCompletionInfo');
+      return false;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SelectedCompletionInfo &&
+        other.runtimeType == SelectedCompletionInfo &&
+        range == other.range &&
+        text == other.text;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        range,
+        text,
+      );
+
+  @override
+  String toString() => jsonEncoder.convert(toJson());
+}
+
 /// A selection range represents a part of a selection hierarchy. A selection
 /// range may have a parent selection range that contains it.
 class SelectionRange implements ToJsonable {
@@ -26220,6 +27176,7 @@ class ServerCapabilities implements ToJsonable {
     this.hoverProvider,
     this.implementationProvider,
     this.inlayHintProvider,
+    this.inlineCompletionProvider,
     this.inlineValueProvider,
     this.linkedEditingRangeProvider,
     this.monikerProvider,
@@ -26331,6 +27288,10 @@ class ServerCapabilities implements ToJsonable {
         ? null
         : _eitherBoolInlayHintOptionsInlayHintRegistrationOptions(
             inlayHintProviderJson);
+    final inlineCompletionProviderJson = json['inlineCompletionProvider'];
+    final inlineCompletionProvider = inlineCompletionProviderJson == null
+        ? null
+        : _eitherBoolInlineCompletionOptions(inlineCompletionProviderJson);
     final inlineValueProviderJson = json['inlineValueProvider'];
     final inlineValueProvider = inlineValueProviderJson == null
         ? null
@@ -26423,6 +27384,7 @@ class ServerCapabilities implements ToJsonable {
       hoverProvider: hoverProvider,
       implementationProvider: implementationProvider,
       inlayHintProvider: inlayHintProvider,
+      inlineCompletionProvider: inlineCompletionProvider,
       inlineValueProvider: inlineValueProvider,
       linkedEditingRangeProvider: linkedEditingRangeProvider,
       monikerProvider: monikerProvider,
@@ -26516,6 +27478,12 @@ class ServerCapabilities implements ToJsonable {
   /// @since 3.17.0
   final Either3<bool, InlayHintOptions, InlayHintRegistrationOptions>?
       inlayHintProvider;
+
+  /// Inline completion options used during static registration.
+  ///
+  /// @since 3.18.0
+  /// @proposed
+  final Either2<bool, InlineCompletionOptions>? inlineCompletionProvider;
 
   /// The server provides inline values.
   ///
@@ -26660,6 +27628,9 @@ class ServerCapabilities implements ToJsonable {
     if (inlayHintProvider != null) {
       result['inlayHintProvider'] = inlayHintProvider;
     }
+    if (inlineCompletionProvider != null) {
+      result['inlineCompletionProvider'] = inlineCompletionProvider;
+    }
     if (inlineValueProvider != null) {
       result['inlineValueProvider'] = inlineValueProvider;
     }
@@ -26799,6 +27770,11 @@ class ServerCapabilities implements ToJsonable {
           allowsUndefined: true, allowsNull: false)) {
         return false;
       }
+      if (!_canParseBoolInlineCompletionOptions(
+          obj, reporter, 'inlineCompletionProvider',
+          allowsUndefined: true, allowsNull: false)) {
+        return false;
+      }
       if (!_canParseBoolInlineValueOptionsInlineValueRegistrationOptions(
           obj, reporter, 'inlineValueProvider',
           allowsUndefined: true, allowsNull: false)) {
@@ -26899,6 +27875,7 @@ class ServerCapabilities implements ToJsonable {
         hoverProvider == other.hoverProvider &&
         implementationProvider == other.implementationProvider &&
         inlayHintProvider == other.inlayHintProvider &&
+        inlineCompletionProvider == other.inlineCompletionProvider &&
         inlineValueProvider == other.inlineValueProvider &&
         linkedEditingRangeProvider == other.linkedEditingRangeProvider &&
         monikerProvider == other.monikerProvider &&
@@ -26938,6 +27915,7 @@ class ServerCapabilities implements ToJsonable {
         hoverProvider,
         implementationProvider,
         inlayHintProvider,
+        inlineCompletionProvider,
         inlineValueProvider,
         linkedEditingRangeProvider,
         monikerProvider,
@@ -28590,6 +29568,10 @@ class StaticRegistrationOptions implements ToJsonable {
     if (InlayHintRegistrationOptions.canParse(json, nullLspJsonReporter)) {
       return InlayHintRegistrationOptions.fromJson(json);
     }
+    if (InlineCompletionRegistrationOptions.canParse(
+        json, nullLspJsonReporter)) {
+      return InlineCompletionRegistrationOptions.fromJson(json);
+    }
     if (InlineValueRegistrationOptions.canParse(json, nullLspJsonReporter)) {
       return InlineValueRegistrationOptions.fromJson(json);
     }
@@ -28652,6 +29634,86 @@ class StaticRegistrationOptions implements ToJsonable {
 
   @override
   int get hashCode => id.hashCode;
+
+  @override
+  String toString() => jsonEncoder.convert(toJson());
+}
+
+/// A string value used as a snippet is a template which allows to insert text
+/// and to control the editor cursor when insertion happens.
+///
+/// A snippet can define tab stops and placeholders with `$1`, `$2` and
+/// `${3:foo}`. `$0` defines the final tab stop, it defaults to the end of the
+/// snippet. Variables are defined with `$name` and `${name:default value}`.
+///
+/// @since 3.18.0
+/// @proposed
+class StringValue implements ToJsonable {
+  static const jsonHandler = LspJsonHandler(
+    StringValue.canParse,
+    StringValue.fromJson,
+  );
+
+  StringValue({
+    this.kind = 'snippet',
+    required this.value,
+  }) {
+    if (kind != 'snippet') {
+      throw 'kind may only be the literal \'snippet\'';
+    }
+  }
+  static StringValue fromJson(Map<String, Object?> json) {
+    final kindJson = json['kind'];
+    final kind = kindJson as String;
+    final valueJson = json['value'];
+    final value = valueJson as String;
+    return StringValue(
+      kind: kind,
+      value: value,
+    );
+  }
+
+  /// The kind of string value.
+  final String kind;
+
+  /// The snippet string.
+  final String value;
+
+  @override
+  Map<String, Object?> toJson() {
+    var result = <String, Object?>{};
+    result['kind'] = kind;
+    result['value'] = value;
+    return result;
+  }
+
+  static bool canParse(Object? obj, LspJsonReporter reporter) {
+    if (obj is Map<String, Object?>) {
+      if (!_canParseLiteral(obj, reporter, 'kind',
+          allowsUndefined: false, allowsNull: false, literal: 'snippet')) {
+        return false;
+      }
+      return _canParseString(obj, reporter, 'value',
+          allowsUndefined: false, allowsNull: false);
+    } else {
+      reporter.reportError('must be of type StringValue');
+      return false;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is StringValue &&
+        other.runtimeType == StringValue &&
+        kind == other.kind &&
+        value == other.value;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        kind,
+        value,
+      );
 
   @override
   String toString() => jsonEncoder.convert(toJson());
@@ -28991,6 +30053,7 @@ class TextDocumentClientCapabilities implements ToJsonable {
     this.hover,
     this.implementation,
     this.inlayHint,
+    this.inlineCompletion,
     this.inlineValue,
     this.linkedEditingRange,
     this.moniker,
@@ -29086,6 +30149,11 @@ class TextDocumentClientCapabilities implements ToJsonable {
         ? InlayHintClientCapabilities.fromJson(
             inlayHintJson as Map<String, Object?>)
         : null;
+    final inlineCompletionJson = json['inlineCompletion'];
+    final inlineCompletion = inlineCompletionJson != null
+        ? InlineCompletionClientCapabilities.fromJson(
+            inlineCompletionJson as Map<String, Object?>)
+        : null;
     final inlineValueJson = json['inlineValue'];
     final inlineValue = inlineValueJson != null
         ? InlineValueClientCapabilities.fromJson(
@@ -29172,6 +30240,7 @@ class TextDocumentClientCapabilities implements ToJsonable {
       hover: hover,
       implementation: implementation,
       inlayHint: inlayHint,
+      inlineCompletion: inlineCompletion,
       inlineValue: inlineValue,
       linkedEditingRange: linkedEditingRange,
       moniker: moniker,
@@ -29251,6 +30320,12 @@ class TextDocumentClientCapabilities implements ToJsonable {
   ///
   /// @since 3.17.0
   final InlayHintClientCapabilities? inlayHint;
+
+  /// Client capabilities specific to inline completions.
+  ///
+  /// @since 3.18.0
+  /// @proposed
+  final InlineCompletionClientCapabilities? inlineCompletion;
 
   /// Capabilities specific to the `textDocument/inlineValue` request.
   ///
@@ -29359,6 +30434,9 @@ class TextDocumentClientCapabilities implements ToJsonable {
     }
     if (inlayHint != null) {
       result['inlayHint'] = inlayHint?.toJson();
+    }
+    if (inlineCompletion != null) {
+      result['inlineCompletion'] = inlineCompletion?.toJson();
     }
     if (inlineValue != null) {
       result['inlineValue'] = inlineValue?.toJson();
@@ -29479,6 +30557,11 @@ class TextDocumentClientCapabilities implements ToJsonable {
           allowsUndefined: true, allowsNull: false)) {
         return false;
       }
+      if (!_canParseInlineCompletionClientCapabilities(
+          obj, reporter, 'inlineCompletion',
+          allowsUndefined: true, allowsNull: false)) {
+        return false;
+      }
       if (!_canParseInlineValueClientCapabilities(obj, reporter, 'inlineValue',
           allowsUndefined: true, allowsNull: false)) {
         return false;
@@ -29569,6 +30652,7 @@ class TextDocumentClientCapabilities implements ToJsonable {
         hover == other.hover &&
         implementation == other.implementation &&
         inlayHint == other.inlayHint &&
+        inlineCompletion == other.inlineCompletion &&
         inlineValue == other.inlineValue &&
         linkedEditingRange == other.linkedEditingRange &&
         moniker == other.moniker &&
@@ -29603,6 +30687,7 @@ class TextDocumentClientCapabilities implements ToJsonable {
         hover,
         implementation,
         inlayHint,
+        inlineCompletion,
         inlineValue,
         linkedEditingRange,
         moniker,
@@ -29872,7 +30957,7 @@ class TextDocumentFilter1 implements ToJsonable {
   /// A language id, like `typescript`.
   final String language;
 
-  /// A glob pattern, like `*.{ts,js}`.
+  /// A glob pattern, like **​/*.{ts,js}. See TextDocumentFilter for examples.
   final String? pattern;
 
   /// A Uri [Uri.scheme], like `file` or `untitled`.
@@ -29957,7 +31042,7 @@ class TextDocumentFilter3 implements ToJsonable {
   /// A language id, like `typescript`.
   final String? language;
 
-  /// A glob pattern, like `*.{ts,js}`.
+  /// A glob pattern, like **​/*.{ts,js}. See TextDocumentFilter for examples.
   final String pattern;
 
   /// A Uri [Uri.scheme], like `file` or `untitled`.
@@ -30042,7 +31127,7 @@ class TextDocumentFilterWithScheme implements ToJsonable {
   /// A language id, like `typescript`.
   final String? language;
 
-  /// A glob pattern, like `*.{ts,js}`.
+  /// A glob pattern, like **​/*.{ts,js}. See TextDocumentFilter for examples.
   final String? pattern;
 
   /// A Uri [Uri.scheme], like `file` or `untitled`.
@@ -30268,6 +31353,9 @@ class TextDocumentPositionParams implements ToJsonable {
     required this.textDocument,
   });
   static TextDocumentPositionParams fromJson(Map<String, Object?> json) {
+    if (InlineCompletionParams.canParse(json, nullLspJsonReporter)) {
+      return InlineCompletionParams.fromJson(json);
+    }
     if (ReferenceParams.canParse(json, nullLspJsonReporter)) {
       return ReferenceParams.fromJson(json);
     }
@@ -30439,6 +31527,10 @@ class TextDocumentRegistrationOptions implements ToJsonable {
     }
     if (InlayHintRegistrationOptions.canParse(json, nullLspJsonReporter)) {
       return InlayHintRegistrationOptions.fromJson(json);
+    }
+    if (InlineCompletionRegistrationOptions.canParse(
+        json, nullLspJsonReporter)) {
+      return InlineCompletionRegistrationOptions.fromJson(json);
     }
     if (InlineValueRegistrationOptions.canParse(json, nullLspJsonReporter)) {
       return InlineValueRegistrationOptions.fromJson(json);
@@ -32711,7 +33803,7 @@ class WorkDoneProgressBegin implements ToJsonable {
 
   /// Optional progress percentage to display (value 100 is considered 100%). If
   /// not provided infinite progress is assumed and clients are allowed to
-  /// ignore the `percentage` value in subsequent in report notifications.
+  /// ignore the `percentage` value in subsequent report notifications.
   ///
   /// The value should be steadily rising. Clients are free to ignore values
   /// that are not following this rule. The value range is [0, 100].
@@ -32999,6 +34091,9 @@ class WorkDoneProgressOptions implements ToJsonable {
     if (DocumentLinkOptions.canParse(json, nullLspJsonReporter)) {
       return DocumentLinkOptions.fromJson(json);
     }
+    if (DocumentRangeFormattingOptions.canParse(json, nullLspJsonReporter)) {
+      return DocumentRangeFormattingOptions.fromJson(json);
+    }
     if (DocumentSymbolOptions.canParse(json, nullLspJsonReporter)) {
       return DocumentSymbolOptions.fromJson(json);
     }
@@ -33029,9 +34124,6 @@ class WorkDoneProgressOptions implements ToJsonable {
     if (DocumentHighlightOptions.canParse(json, nullLspJsonReporter)) {
       return DocumentHighlightOptions.fromJson(json);
     }
-    if (DocumentRangeFormattingOptions.canParse(json, nullLspJsonReporter)) {
-      return DocumentRangeFormattingOptions.fromJson(json);
-    }
     if (FoldingRangeOptions.canParse(json, nullLspJsonReporter)) {
       return FoldingRangeOptions.fromJson(json);
     }
@@ -33040,6 +34132,9 @@ class WorkDoneProgressOptions implements ToJsonable {
     }
     if (ImplementationOptions.canParse(json, nullLspJsonReporter)) {
       return ImplementationOptions.fromJson(json);
+    }
+    if (InlineCompletionOptions.canParse(json, nullLspJsonReporter)) {
+      return InlineCompletionOptions.fromJson(json);
     }
     if (InlineValueOptions.canParse(json, nullLspJsonReporter)) {
       return InlineValueOptions.fromJson(json);
@@ -33123,6 +34218,9 @@ class WorkDoneProgressParams implements ToJsonable {
     if (DocumentRangeFormattingParams.canParse(json, nullLspJsonReporter)) {
       return DocumentRangeFormattingParams.fromJson(json);
     }
+    if (DocumentRangesFormattingParams.canParse(json, nullLspJsonReporter)) {
+      return DocumentRangesFormattingParams.fromJson(json);
+    }
     if (InlineValueParams.canParse(json, nullLspJsonReporter)) {
       return InlineValueParams.fromJson(json);
     }
@@ -33176,6 +34274,9 @@ class WorkDoneProgressParams implements ToJsonable {
     }
     if (FoldingRangeParams.canParse(json, nullLspJsonReporter)) {
       return FoldingRangeParams.fromJson(json);
+    }
+    if (InlineCompletionParams.canParse(json, nullLspJsonReporter)) {
+      return InlineCompletionParams.fromJson(json);
     }
     if (ReferenceParams.canParse(json, nullLspJsonReporter)) {
       return ReferenceParams.fromJson(json);
@@ -33324,10 +34425,10 @@ class WorkDoneProgressReport implements ToJsonable {
 
   /// Optional progress percentage to display (value 100 is considered 100%). If
   /// not provided infinite progress is assumed and clients are allowed to
-  /// ignore the `percentage` value in subsequent in report notifications.
+  /// ignore the `percentage` value in subsequent report notifications.
   ///
   /// The value should be steadily rising. Clients are free to ignore values
-  /// that are not following this rule. The value range is [0, 100]
+  /// that are not following this rule. The value range is [0, 100].
   final int? percentage;
 
   @override
@@ -33406,6 +34507,7 @@ class WorkspaceClientCapabilities implements ToJsonable {
     this.didChangeWatchedFiles,
     this.executeCommand,
     this.fileOperations,
+    this.foldingRange,
     this.inlayHint,
     this.inlineValue,
     this.semanticTokens,
@@ -33448,6 +34550,11 @@ class WorkspaceClientCapabilities implements ToJsonable {
         ? FileOperationClientCapabilities.fromJson(
             fileOperationsJson as Map<String, Object?>)
         : null;
+    final foldingRangeJson = json['foldingRange'];
+    final foldingRange = foldingRangeJson != null
+        ? FoldingRangeWorkspaceClientCapabilities.fromJson(
+            foldingRangeJson as Map<String, Object?>)
+        : null;
     final inlayHintJson = json['inlayHint'];
     final inlayHint = inlayHintJson != null
         ? InlayHintWorkspaceClientCapabilities.fromJson(
@@ -33484,6 +34591,7 @@ class WorkspaceClientCapabilities implements ToJsonable {
       didChangeWatchedFiles: didChangeWatchedFiles,
       executeCommand: executeCommand,
       fileOperations: fileOperations,
+      foldingRange: foldingRange,
       inlayHint: inlayHint,
       inlineValue: inlineValue,
       semanticTokens: semanticTokens,
@@ -33529,6 +34637,13 @@ class WorkspaceClientCapabilities implements ToJsonable {
   ///
   /// Since 3.16.0
   final FileOperationClientCapabilities? fileOperations;
+
+  /// Capabilities specific to the folding range requests scoped to the
+  /// workspace.
+  ///
+  /// @since 3.18.0
+  /// @proposed
+  final FoldingRangeWorkspaceClientCapabilities? foldingRange;
 
   /// Capabilities specific to the inlay hint requests scoped to the workspace.
   ///
@@ -33584,6 +34699,9 @@ class WorkspaceClientCapabilities implements ToJsonable {
     }
     if (fileOperations != null) {
       result['fileOperations'] = fileOperations?.toJson();
+    }
+    if (foldingRange != null) {
+      result['foldingRange'] = foldingRange?.toJson();
     }
     if (inlayHint != null) {
       result['inlayHint'] = inlayHint?.toJson();
@@ -33646,6 +34764,11 @@ class WorkspaceClientCapabilities implements ToJsonable {
           allowsUndefined: true, allowsNull: false)) {
         return false;
       }
+      if (!_canParseFoldingRangeWorkspaceClientCapabilities(
+          obj, reporter, 'foldingRange',
+          allowsUndefined: true, allowsNull: false)) {
+        return false;
+      }
       if (!_canParseInlayHintWorkspaceClientCapabilities(
           obj, reporter, 'inlayHint',
           allowsUndefined: true, allowsNull: false)) {
@@ -33690,6 +34813,7 @@ class WorkspaceClientCapabilities implements ToJsonable {
         didChangeWatchedFiles == other.didChangeWatchedFiles &&
         executeCommand == other.executeCommand &&
         fileOperations == other.fileOperations &&
+        foldingRange == other.foldingRange &&
         inlayHint == other.inlayHint &&
         inlineValue == other.inlineValue &&
         semanticTokens == other.semanticTokens &&
@@ -33708,6 +34832,7 @@ class WorkspaceClientCapabilities implements ToJsonable {
         didChangeWatchedFiles,
         executeCommand,
         fileOperations,
+        foldingRange,
         inlayHint,
         inlineValue,
         semanticTokens,
@@ -35898,6 +37023,34 @@ bool _canParseBoolInlayHintOptionsInlayHintRegistrationOptions(
             !InlayHintRegistrationOptions.canParse(value, reporter))) {
       reporter.reportError(
           'must be of type Either3<bool, InlayHintOptions, InlayHintRegistrationOptions>');
+      return false;
+    }
+  } finally {
+    reporter.pop();
+  }
+  return true;
+}
+
+bool _canParseBoolInlineCompletionOptions(
+    Map<String, Object?> map, LspJsonReporter reporter, String fieldName,
+    {required bool allowsUndefined, required bool allowsNull}) {
+  reporter.push(fieldName);
+  try {
+    if (!allowsUndefined && !map.containsKey(fieldName)) {
+      reporter.reportError('must not be undefined');
+      return false;
+    }
+    final value = map[fieldName];
+    final nullCheck = allowsNull || allowsUndefined;
+    if (!nullCheck && value == null) {
+      reporter.reportError('must not be null');
+      return false;
+    }
+    if ((!nullCheck || value != null) &&
+        (value is! bool &&
+            !InlineCompletionOptions.canParse(value, reporter))) {
+      reporter.reportError(
+          'must be of type Either2<bool, InlineCompletionOptions>');
       return false;
     }
   } finally {
@@ -38169,6 +39322,33 @@ bool _canParseFoldingRangeKind(
   return true;
 }
 
+bool _canParseFoldingRangeWorkspaceClientCapabilities(
+    Map<String, Object?> map, LspJsonReporter reporter, String fieldName,
+    {required bool allowsUndefined, required bool allowsNull}) {
+  reporter.push(fieldName);
+  try {
+    if (!allowsUndefined && !map.containsKey(fieldName)) {
+      reporter.reportError('must not be undefined');
+      return false;
+    }
+    final value = map[fieldName];
+    final nullCheck = allowsNull || allowsUndefined;
+    if (!nullCheck && value == null) {
+      reporter.reportError('must not be null');
+      return false;
+    }
+    if ((!nullCheck || value != null) &&
+        !FoldingRangeWorkspaceClientCapabilities.canParse(value, reporter)) {
+      reporter.reportError(
+          'must be of type FoldingRangeWorkspaceClientCapabilities');
+      return false;
+    }
+  } finally {
+    reporter.pop();
+  }
+  return true;
+}
+
 bool _canParseFormattingOptions(
     Map<String, Object?> map, LspJsonReporter reporter, String fieldName,
     {required bool allowsUndefined, required bool allowsNull}) {
@@ -38451,6 +39631,85 @@ bool _canParseInlayHintWorkspaceClientCapabilities(
         !InlayHintWorkspaceClientCapabilities.canParse(value, reporter)) {
       reporter
           .reportError('must be of type InlayHintWorkspaceClientCapabilities');
+      return false;
+    }
+  } finally {
+    reporter.pop();
+  }
+  return true;
+}
+
+bool _canParseInlineCompletionClientCapabilities(
+    Map<String, Object?> map, LspJsonReporter reporter, String fieldName,
+    {required bool allowsUndefined, required bool allowsNull}) {
+  reporter.push(fieldName);
+  try {
+    if (!allowsUndefined && !map.containsKey(fieldName)) {
+      reporter.reportError('must not be undefined');
+      return false;
+    }
+    final value = map[fieldName];
+    final nullCheck = allowsNull || allowsUndefined;
+    if (!nullCheck && value == null) {
+      reporter.reportError('must not be null');
+      return false;
+    }
+    if ((!nullCheck || value != null) &&
+        !InlineCompletionClientCapabilities.canParse(value, reporter)) {
+      reporter
+          .reportError('must be of type InlineCompletionClientCapabilities');
+      return false;
+    }
+  } finally {
+    reporter.pop();
+  }
+  return true;
+}
+
+bool _canParseInlineCompletionContext(
+    Map<String, Object?> map, LspJsonReporter reporter, String fieldName,
+    {required bool allowsUndefined, required bool allowsNull}) {
+  reporter.push(fieldName);
+  try {
+    if (!allowsUndefined && !map.containsKey(fieldName)) {
+      reporter.reportError('must not be undefined');
+      return false;
+    }
+    final value = map[fieldName];
+    final nullCheck = allowsNull || allowsUndefined;
+    if (!nullCheck && value == null) {
+      reporter.reportError('must not be null');
+      return false;
+    }
+    if ((!nullCheck || value != null) &&
+        !InlineCompletionContext.canParse(value, reporter)) {
+      reporter.reportError('must be of type InlineCompletionContext');
+      return false;
+    }
+  } finally {
+    reporter.pop();
+  }
+  return true;
+}
+
+bool _canParseInlineCompletionTriggerKind(
+    Map<String, Object?> map, LspJsonReporter reporter, String fieldName,
+    {required bool allowsUndefined, required bool allowsNull}) {
+  reporter.push(fieldName);
+  try {
+    if (!allowsUndefined && !map.containsKey(fieldName)) {
+      reporter.reportError('must not be undefined');
+      return false;
+    }
+    final value = map[fieldName];
+    final nullCheck = allowsNull || allowsUndefined;
+    if (!nullCheck && value == null) {
+      reporter.reportError('must not be null');
+      return false;
+    }
+    if ((!nullCheck || value != null) &&
+        !InlineCompletionTriggerKind.canParse(value, reporter)) {
+      reporter.reportError('must be of type InlineCompletionTriggerKind');
       return false;
     }
   } finally {
@@ -39215,6 +40474,34 @@ bool _canParseListInlayHintLabelPartString(
                 value is! String)) {
       reporter.reportError(
           'must be of type Either2<List<InlayHintLabelPart>, String>');
+      return false;
+    }
+  } finally {
+    reporter.pop();
+  }
+  return true;
+}
+
+bool _canParseListInlineCompletionItem(
+    Map<String, Object?> map, LspJsonReporter reporter, String fieldName,
+    {required bool allowsUndefined, required bool allowsNull}) {
+  reporter.push(fieldName);
+  try {
+    if (!allowsUndefined && !map.containsKey(fieldName)) {
+      reporter.reportError('must not be undefined');
+      return false;
+    }
+    final value = map[fieldName];
+    final nullCheck = allowsNull || allowsUndefined;
+    if (!nullCheck && value == null) {
+      reporter.reportError('must not be null');
+      return false;
+    }
+    if ((!nullCheck || value != null) &&
+        (value is! List<Object?> ||
+            value.any(
+                (item) => !InlineCompletionItem.canParse(item, reporter)))) {
+      reporter.reportError('must be of type List<InlineCompletionItem>');
       return false;
     }
   } finally {
@@ -41086,6 +42373,32 @@ bool _canParseRenameFileOptions(
   return true;
 }
 
+bool _canParseSelectedCompletionInfo(
+    Map<String, Object?> map, LspJsonReporter reporter, String fieldName,
+    {required bool allowsUndefined, required bool allowsNull}) {
+  reporter.push(fieldName);
+  try {
+    if (!allowsUndefined && !map.containsKey(fieldName)) {
+      reporter.reportError('must not be undefined');
+      return false;
+    }
+    final value = map[fieldName];
+    final nullCheck = allowsNull || allowsUndefined;
+    if (!nullCheck && value == null) {
+      reporter.reportError('must not be null');
+      return false;
+    }
+    if ((!nullCheck || value != null) &&
+        !SelectedCompletionInfo.canParse(value, reporter)) {
+      reporter.reportError('must be of type SelectedCompletionInfo');
+      return false;
+    }
+  } finally {
+    reporter.pop();
+  }
+  return true;
+}
+
 bool _canParseSelectionRange(
     Map<String, Object?> map, LspJsonReporter reporter, String fieldName,
     {required bool allowsUndefined, required bool allowsNull}) {
@@ -41634,6 +42947,32 @@ bool _canParseStringRelativePattern(
         (value is! String && !RelativePattern.canParse(value, reporter))) {
       reporter
           .reportError('must be of type Either2<LspPattern, RelativePattern>');
+      return false;
+    }
+  } finally {
+    reporter.pop();
+  }
+  return true;
+}
+
+bool _canParseStringStringValue(
+    Map<String, Object?> map, LspJsonReporter reporter, String fieldName,
+    {required bool allowsUndefined, required bool allowsNull}) {
+  reporter.push(fieldName);
+  try {
+    if (!allowsUndefined && !map.containsKey(fieldName)) {
+      reporter.reportError('must not be undefined');
+      return false;
+    }
+    final value = map[fieldName];
+    final nullCheck = allowsNull || allowsUndefined;
+    if (!nullCheck && value == null) {
+      reporter.reportError('must not be null');
+      return false;
+    }
+    if ((!nullCheck || value != null) &&
+        (value is! String && !StringValue.canParse(value, reporter))) {
+      reporter.reportError('must be of type Either2<String, StringValue>');
       return false;
     }
   } finally {
@@ -42621,6 +43960,16 @@ Either3<bool, InlayHintOptions, InlayHintRegistrationOptions>
               : throw '$value was not one of (bool, InlayHintOptions, InlayHintRegistrationOptions)';
 }
 
+Either2<bool, InlineCompletionOptions> _eitherBoolInlineCompletionOptions(
+    Object? value) {
+  return value is bool
+      ? Either2.t1(value)
+      : InlineCompletionOptions.canParse(value, nullLspJsonReporter)
+          ? Either2.t2(
+              InlineCompletionOptions.fromJson(value as Map<String, Object?>))
+          : throw '$value was not one of (bool, InlineCompletionOptions)';
+}
+
 Either3<bool, InlineValueOptions, InlineValueRegistrationOptions>
     _eitherBoolInlineValueOptionsInlineValueRegistrationOptions(Object? value) {
   return value is bool
@@ -42962,6 +44311,14 @@ Either2<LspPattern, RelativePattern> _eitherStringRelativePattern(
       : RelativePattern.canParse(value, nullLspJsonReporter)
           ? Either2.t2(RelativePattern.fromJson(value as Map<String, Object?>))
           : throw '$value was not one of (LspPattern, RelativePattern)';
+}
+
+Either2<String, StringValue> _eitherStringStringValue(Object? value) {
+  return value is String
+      ? Either2.t1(value)
+      : StringValue.canParse(value, nullLspJsonReporter)
+          ? Either2.t2(StringValue.fromJson(value as Map<String, Object?>))
+          : throw '$value was not one of (String, StringValue)';
 }
 
 Either2<TextDocumentContentChangeEvent1, TextDocumentContentChangeEvent2>
